@@ -43,6 +43,12 @@
             <version>4.8.0.201705170830-rc1</version>
         </dependency>
 
+        <!--Database-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-mongodb</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-cloudwatch</artifactId>
