@@ -4,11 +4,14 @@ import com.insightservice.springboot.exception.BadUrlException;
 import org.apache.tomcat.util.http.fileupload.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
+import static com.insightservice.springboot.Constants.LOG;
 import static com.insightservice.springboot.Constants.REPO_STORAGE_DIR;
 
 /**
@@ -40,7 +43,7 @@ public class JGitHelper
         return new File(REPO_STORAGE_DIR + File.separator + repoName);
     }
 
-    public static void cloneRepository(String remoteUrl) throws GitAPIException, IOException
+    public static File cloneRepository(String remoteUrl) throws GitAPIException, IOException
     {
         //Make an empty dir for the cloned repo
         File directory = getPathOfLocalRepository(remoteUrl);
@@ -49,7 +52,7 @@ public class JGitHelper
         directory.mkdirs();
 
         //Clone
-        System.out.println("Cloning from " + remoteUrl + " to " + directory);
+        LOG.info("Cloning from " + remoteUrl + " to " + directory);
         try (Git result = Git.cloneRepository()
                 .setURI(remoteUrl)
                 .setDirectory(directory)
@@ -59,6 +62,8 @@ public class JGitHelper
         {
             throw new BadUrlException("No repository could be read from your GitHub URL.");
         }
+
+        return directory;
     }
 
     public static void removeClonedRepository(String remoteUrl) throws IOException
@@ -68,6 +73,22 @@ public class JGitHelper
         FileUtils.deleteDirectory(getPathOfLocalRepository(remoteUrl));
     }
 
+    public static Repository openLocalRepository(File projectPath) throws IOException
+    {
+        FileRepositoryBuilder builder = new FileRepositoryBuilder();
+        return builder
+                .readEnvironment() // scan environment GIT_* variables
+                .findGitDir(projectPath)
+                .build();
+    }
+
+    public static Repository openLocalRepository(String remoteUrl) throws IOException
+    {
+        File pathToRepository = getPathOfLocalRepository(remoteUrl);
+        assert pathToRepository.exists();
+
+        return openLocalRepository(pathToRepository);
+    }
 
 
 
@@ -91,17 +112,6 @@ public class JGitHelper
                 .readEnvironment() // scan environment GIT_* variables
                 //.findGitDir() // scan up the file system tree
                 .findGitDir(new File(projectRootPath))
-                .build();
-    }*/
-
-    //UNUSED
-    //Same as above method, but requires a path parameter
-    /*public static Repository openLocalRepository(File projectPath) throws IOException
-    {
-        FileRepositoryBuilder builder = new FileRepositoryBuilder();
-        return builder
-                .readEnvironment() // scan environment GIT_* variables
-                .findGitDir(projectPath)
                 .build();
     }*/
 
