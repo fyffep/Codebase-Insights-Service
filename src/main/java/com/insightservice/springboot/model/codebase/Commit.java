@@ -1,8 +1,10 @@
 package com.insightservice.springboot.model.codebase;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.springframework.data.annotation.Transient;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -22,6 +24,8 @@ import java.util.Set;
  **/
 public class Commit {
 
+    @JsonIgnore
+    @Transient
     private ArrayList<DiffEntry> commitDiffs;
     private String author;
     private String authorEmail;
