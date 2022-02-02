@@ -8,6 +8,8 @@ import com.insightservice.springboot.model.codebase.HeatObject;
 import java.awt.*;
 import java.util.*;
 
+import static com.insightservice.springboot.Constants.LOG;
+
 /**
  * Modifies the Codebase so that every HeatObject within it is given a heat level
  * according to the specified metric.
@@ -58,7 +60,7 @@ public class HeatCalculationUtility
 
     private static void assignHeatLevelsFileSize(Codebase codebase)
     {
-        System.out.println("Calculating heat based on file size...");
+        LOG.info("Calculating heat based on file size...");
         final int REQUIRED_NUM_COMMITS_WITHOUT_CHANGING = 5; //the number of consecutive commits where no increase in a file's size is recorded needed in order to reduce the accumulated heat level.
         final int REQUIRED_SIZE_CHANGE = 200;
         final int SIZE_INCREASE_HEAT_CONSEQUENCE = 2; //how much the heat increases when the file size increases
@@ -146,7 +148,7 @@ public class HeatCalculationUtility
                 lastHeatObject = newerHeatObject;
             }
         }
-        System.out.println("Finished calculating heat based on file size.");
+        LOG.info("Finished calculating heat based on file size.");
     }
 
     private static int computeFileSizeHeat(long fileSize)
@@ -221,7 +223,7 @@ public class HeatCalculationUtility
 
     private static void assignHeatLevelsNumberOfCommits(Codebase codebase)
     {
-        System.out.println("Calculating heat based on number of commits...");
+        LOG.info("Calculating heat based on number of commits...");
         final int REQUIRED_NUM_COMMITS_WITHOUT_CHANGING = 5; //the number of consecutive commits where the file is not modified in order to reduce the accumulated heat level.
         final int COMMIT_HEAT_CONSEQUENCE = 2; //how much the heat increases when the file is modified
         final int COMMIT_ABSENCE_HEAT_CONSEQUENCE = -1; //how much the heat decreases if the file is not modified for enough consecutive commits
@@ -278,7 +280,7 @@ public class HeatCalculationUtility
                 lastHeatObject = newerHeatObject;
             }
         }
-        System.out.println("Finished calculating heat based on number of commits.");
+        LOG.info("Finished calculating heat based on number of commits.");
     }
 
 
@@ -298,7 +300,7 @@ public class HeatCalculationUtility
          The more a person modifies a file, the more they "own" the file...so it takes longer for them to be considered inactive.
          */
 
-        System.out.println("Calculating heat based on number of authors...");
+        LOG.info("Calculating heat based on number of authors...");
         final int SCORE_PENALTY_FOR_NEW_AUTHOR = 10; //how many consecutive commits another author must make to a file before a particular author can be considered absent
         final int SCORE_PENALTY_FOR_RETURNING = 1; //how many points an author is given when they return
 
@@ -388,7 +390,7 @@ public class HeatCalculationUtility
                 lastHeatObject = newerHeatObject;
             }
         }
-        System.out.println("Finished calculating heat based on number of authors.");
+        LOG.info("Finished calculating heat based on number of authors.");
     }
 
 
@@ -432,7 +434,7 @@ public class HeatCalculationUtility
 
     private static void assignHeatLevelsOverall(Codebase codebase)
     {
-        System.out.println("Calculating overall heat...");
+        LOG.info("Calculating overall heat...");
         final float WEIGHT_FILE_SIZE = 0.2f;
         final float WEIGHT_NUM_COMMITS_NUM_OF_COMMITS = 0.4f;
         final float WEIGHT_NUM_OF_AUTHORS = 0.4f;
@@ -471,7 +473,7 @@ public class HeatCalculationUtility
                 commitToHeatObjectEntry.getValue().setHeatLevel(heatSum);
             }
         }
-        System.out.println("Finished calculating overall heat.");
+        LOG.info("Finished calculating overall heat.");
     }
 
     /**

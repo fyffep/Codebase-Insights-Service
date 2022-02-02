@@ -71,6 +71,7 @@ public class JGitHelper
         String repoName = getRepositoryNameFromUrl(remoteUrl);
         //Remove the cloned repo
         FileUtils.deleteDirectory(getPathOfLocalRepository(remoteUrl));
+        LOG.info("Removed the repository named `"+repoName+"` from the file system.");
     }
 
     public static Repository openLocalRepository(File projectPath) throws IOException
