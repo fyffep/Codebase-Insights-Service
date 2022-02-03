@@ -40,7 +40,16 @@ public class DashboardCalculationUtility
         return heatAverage;
     }
 
-    public static void assignDashboardData(Codebase codebase)
+
+    /**
+     * Summarizes the data in a Codebase into a DashboardModel.
+     * The DashboardModel is given all the data it needs so that it can
+     * be displayed immediately.
+     * @param codebase contains the data from analyzing a Codebase.
+     * @return a DashboardModel with average heat scores and the names of the #1 hottest files
+     * from each metric.
+     */
+    public static DashboardModel assignDashboardData(Codebase codebase)
     {
         //Compute average heat scores and the hottest files for each metric
         ArrayList<Double> averageHeatScoreList = new ArrayList<>();
@@ -59,9 +68,11 @@ public class DashboardCalculationUtility
         }
 
         //Place the data into the DashboardModel
-        DashboardModel dashboardModel = DashboardModel.getInstance();
+        DashboardModel dashboardModel = new DashboardModel();
         dashboardModel.setAverageHeatScoreList(averageHeatScoreList);
         dashboardModel.setNamesOfHottestFileList(namesOfHottestFileList);
+
+        return dashboardModel;
     }
 
     /**
