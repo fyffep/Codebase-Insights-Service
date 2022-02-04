@@ -1,0 +1,22 @@
+[
+  {
+    "ParameterKey": "DesiredCapacity",
+    "ParameterValue": "1"
+  },
+  {
+    "ParameterKey": "InstanceType",
+    "ParameterValue": "t3.micro"
+  },
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "ops"
+  },
+  {
+    "ParameterKey": "VpcId",
+    "ParameterValue": "vpc-0a1e95d192d0545dc"
+  },
+  {
+    "ParameterKey": "SubnetId",
+    "ParameterValue": "subnet-01d444728e822b04d,subnet-0b01649d0b09dcedc,subnet-0f3c54592b6cf4394,subnet-0e4e2a3ea8192ff23,subnet-0e5860c200b0d2c2c,subnet-06846777ef651a2fb"
+  }
+]
