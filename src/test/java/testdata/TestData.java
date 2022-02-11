@@ -1,9 +1,15 @@
 package testdata;
 
+import java.io.File;
+
 public class TestData
 {
     public static final String REMOTE_URL = "https://github.com/fyffep/codebase-insights-intellij";
-    public static final String BOGUS_REMOTE_URL = "https://gitfake.com/testdouble/java-testing-example";
+    public static final String BOGUS_REMOTE_URL = "https://gitfake.com/testdouble/java-testing-example"; //notice the word "gitfake"
+    public static final String NOT_A_REMOTE_URL = "https://localhost/";
+    public static final String SNEAKY_REMOTE_URL = "https://github.com/fyffep/codebase-insights-intelligence"; //real user, fake repo
+    public static final File CLONED_REPO_PATH = new File("repositories/codebase-insights-intellij"); //where we expect the repo with REMOTE_URL to be cloned to
+    public static final String MASTER_BRANCH = "master";
 
     public static final int NUMBER_OF_COMMITS_IN_GITIGNORE = 16; //TODO has to be changed when our .gitignore is updated!
     public static long TEST_DEFAULT_FILE_COUNT = 0;

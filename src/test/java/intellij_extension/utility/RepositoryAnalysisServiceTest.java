@@ -3,63 +3,41 @@ package intellij_extension.utility;
 import com.insightservice.springboot.model.codebase.Codebase;
 import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.model.codebase.HeatObject;
+import com.insightservice.springboot.service.RepositoryAnalysisService;
 import com.insightservice.springboot.utility.RepositoryAnalyzer;
 import com.insightservice.springboot.utility.commit_history.JGitHelper;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
 
-import static com.insightservice.springboot.Constants.LOG;
 import static org.junit.jupiter.api.Assertions.*;
 import static testdata.TestData.MASTER_BRANCH;
 import static testdata.TestData.REMOTE_URL;
 
 /**
- * UNIT TESTING
- * If you fail any of these tests locally it might be because you don't have the branches checked out.
+ * INTEGRATION TESTING
+ * These are duplicate tests from RepositoryAnalyzerTest.java
+ * but with RepositoryAnalysisService involved.
  */
-public class RepositoryAnalyzerTest {
-    /**
-     * Performs ordinary usage of RepositoryAnalyzer.attachCodebaseData(...)
-     * but with the extra setup and teardown. Can be used in various tests.
-     * @param remoteUrl should be REMOTE_URL. It is a link to the GitHub repo to clone.
-     * @param branchName the exact name of the branch to clone and analyze.
-     */
-    private static Codebase extractDataToCodebase(String remoteUrl, String branchName) throws GitAPIException, IOException
-    {
-        //Obtain file metrics by analyzing the code base
-        RepositoryAnalyzer repositoryAnalyzer = null;
-        try
-        {
-            //Setup RepositoryAnalyzer
-            JGitHelper.cloneRepository(remoteUrl, branchName);
-            repositoryAnalyzer = new RepositoryAnalyzer(remoteUrl);
+@RunWith(SpringRunner.class)
+public class RepositoryAnalysisServiceTest {
 
-            Codebase codebase = new Codebase();
-
-            //Perform analysis
-            RepositoryAnalyzer.attachBranchNameList(codebase);
-            codebase.newBranchSelected(branchName); //triggers attachCodebaseData(...)
-
-            //Now the Codebase contains all the data it needs
-            LOG.info("Heat calculations complete. Number of files: " + codebase.getActiveFileObjects().size());
-
-            return codebase;
+    //Mock instance of RepositoryAnalysisService
+    @TestConfiguration
+    static class RepositoryAnalysisServiceImplTestContextConfiguration {
+        @Bean
+        public RepositoryAnalysisService repositoryAnalysisService() {
+            return new RepositoryAnalysisService();
         }
-        catch (IOException | GitAPIException e) {
-            e.printStackTrace();
-            LOG.error(e.toString());
-            LOG.error(e.getMessage());
-
-            throw e;
-        }
-        finally {
-            repositoryAnalyzer.cleanup();
-        }
-        //Do not delete cloned test repo
     }
-
+    @Autowired
+    RepositoryAnalysisService repositoryAnalysisService;
 
 
     @Test
@@ -105,7 +83,7 @@ public class RepositoryAnalyzerTest {
         int EXPECTED_BRANCH_SIZE = 99;
 
         // Create test objects
-        Codebase codebase = extractDataToCodebase(REMOTE_URL, "view-model-communication"); //method being tested
+        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(REMOTE_URL, "view-model-communication"); //method being tested
 
         assertEquals(EXPECTED_BRANCH_SIZE, codebase.getActiveCommits().size());
     }
@@ -117,7 +95,7 @@ public class RepositoryAnalyzerTest {
         int EXPECTED_BRANCH_SIZE = 59;
 
         // Create test objects
-        Codebase codebase = extractDataToCodebase(REMOTE_URL, "ui-development-commit-history"); //method being tested
+        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(REMOTE_URL, "ui-development-commit-history"); //method being tested
 
         assertEquals(EXPECTED_BRANCH_SIZE, codebase.getActiveCommits().size());
     }
@@ -219,7 +197,7 @@ public class RepositoryAnalyzerTest {
         final String EXPECTED_EMAIL_OF_AUTHOR_10_2 = "fyffep";
 
         //Create test objects
-        Codebase codebase = extractDataToCodebase(REMOTE_URL, "development"); //method being tested
+        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(REMOTE_URL, "development"); //method being tested
 
         // Verify the results
         FileObject fileObject = codebase.getFileObjectFromFilename(TEST_FILE_NAME);
@@ -432,7 +410,7 @@ public class RepositoryAnalyzerTest {
         final String EXPECTED_EMAIL_OF_AUTHOR_8_3 = "ebehar@iu.edu";
 
         //Create test objects
-        Codebase codebase = extractDataToCodebase(REMOTE_URL, "development"); //method being tested
+        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(REMOTE_URL, "development"); //method being tested
 
         // Verify the results
         FileObject fileObject = codebase.getFileObjectFromFilename(TEST_FILE_NAME);
@@ -577,7 +555,7 @@ public class RepositoryAnalyzerTest {
         final String EXPECTED_EMAIL_OF_AUTHOR_3_2 = "ebehar@iu.edu";
 
         //Create test objects
-        Codebase codebase = extractDataToCodebase(REMOTE_URL, "view-model-communication"); //method being tested
+        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(REMOTE_URL, "view-model-communication"); //method being tested
 
         // Verify the results
         FileObject fileObject = codebase.getFileObjectFromFilename(TEST_FILE_NAME);

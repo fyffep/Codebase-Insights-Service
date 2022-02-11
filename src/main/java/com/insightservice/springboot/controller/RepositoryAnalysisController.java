@@ -35,7 +35,7 @@ public class RepositoryAnalysisController
 
         LOG.info("Beginning analysis of the repository with URL `"+ remoteUrl +"`...");
         //Analyze Codebase
-        Codebase codebase = repositoryAnalysisService.extractData(remoteUrl);
+        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(remoteUrl, "master"); //TODO consider other branches
         //DashboardCalculationUtility.assignDashboardData(codebase);
 
         return new ResponseEntity<Codebase>(codebase, HttpStatus.OK);
@@ -48,7 +48,7 @@ public class RepositoryAnalysisController
 
         LOG.info("Beginning analysis of the repository with URL `"+ remoteUrl +"`...");
         //Analyze Codebase
-        Codebase codebase = repositoryAnalysisService.extractData(remoteUrl);
+        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(remoteUrl, "master"); //TODO consider other branches
 
         //TODO we'd want to write the codebase to the database here so that it can be retrieved later.
 
@@ -65,7 +65,7 @@ public class RepositoryAnalysisController
 
         LOG.info("Beginning analysis of the repository with URL `"+ remoteUrl +"`...");
         //Analyze Codebase
-        Codebase codebase = repositoryAnalysisService.extractData(remoteUrl);
+        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(remoteUrl, "master"); //TODO consider other branches
 
         String pathToRepos = JGitHelper.getPathOfLocalRepository(remoteUrl).getPath();
         codebase.setProjectRootPath(pathToRepos);

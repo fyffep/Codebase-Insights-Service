@@ -50,10 +50,10 @@ public class RepositoryAnalyzer {
         git = new Git(repo);
     }
 
-    // Init git variable based on supplied path
-    public RepositoryAnalyzer(File projectPath) throws IOException {
-        git = new Git(JGitHelper.openLocalRepository(projectPath));
-    }
+    // Init git variable based on supplied path (UNUSED due to upgrading to Spring Boot)
+//    public RepositoryAnalyzer(File projectPath) throws IOException {
+//        git = new Git(JGitHelper.openLocalRepository(projectPath));
+//    }
 
     /**
      * Closes the open local Git repository, allowing

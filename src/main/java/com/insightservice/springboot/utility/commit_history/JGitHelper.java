@@ -30,7 +30,7 @@ public class JGitHelper
     {
         //Determine name of new directory
         String[] repoNameArr = remoteUrl.strip().split("/");
-        if (repoNameArr.length < 3) //at least 2 slashes are in a Git URL
+        if (repoNameArr.length < 5) //at least 4 slashes are in a Git URL
         {
             throw new MalformedURLException(remoteUrl + " is not a valid repository URL.");
         }
@@ -77,7 +77,7 @@ public class JGitHelper
         LOG.info("Removed the repository named `"+repoName+"` from the file system.");
     }
 
-    public static Repository openLocalRepository(File projectPath) throws IOException
+    private static Repository openLocalRepository(File projectPath) throws IOException
     {
         try
         {

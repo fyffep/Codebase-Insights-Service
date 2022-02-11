@@ -13,10 +13,9 @@ import static com.insightservice.springboot.Constants.LOG;
 @Service
 public class RepositoryAnalysisService
 {
-    public void cloneRemoteRepository(String remoteUrl) throws GitAPIException, IOException
+    public void cloneRemoteRepository(String remoteUrl, String branchName) throws GitAPIException, IOException
     {
-        String DEFAULT_BRANCH = "master"; //TODO account for main, development, etc.
-        JGitHelper.cloneRepository(remoteUrl, DEFAULT_BRANCH);
+        JGitHelper.cloneRepository(remoteUrl, branchName);
     }
 
 
@@ -27,34 +26,26 @@ public class RepositoryAnalysisService
      * @param remoteUrl the URL to the home page of a user's GitHub repository
      * @return the Codebase containing all heat and file data.
      */
-    public Codebase extractData(String remoteUrl) throws GitAPIException, IOException
+    public Codebase extractDataToCodebase(String remoteUrl, String branchName) throws GitAPIException, IOException
     {
-        this.cloneRemoteRepository(remoteUrl);
-
         //Obtain file metrics by analyzing the code base
         RepositoryAnalyzer repositoryAnalyzer = null;
         try
         {
+            //Setup RepositoryAnalyzer
+            this.cloneRemoteRepository(remoteUrl, branchName);
+            repositoryAnalyzer = new RepositoryAnalyzer(remoteUrl);
+
             Codebase codebase = new Codebase();
 
-            //Calculate file sizes for every commit
-            repositoryAnalyzer = new RepositoryAnalyzer(remoteUrl);
+            //Perform analysis
             RepositoryAnalyzer.attachBranchNameList(codebase);
-            codebase.selectDefaultBranch();
-            RepositoryAnalyzer.attachCodebaseData(codebase);
+            codebase.newBranchSelected(branchName); //triggers attachCodebaseData(...)
 
             //Now the Codebase contains all the data it needs
             LOG.info("Heat calculations complete. Number of files: " + codebase.getActiveFileObjects().size());
 
             return codebase;
-        }
-        catch (IOException | GitAPIException e) {
-            //FIXME this is possibly repetitive logging
-            e.printStackTrace();
-            LOG.error(e.toString());
-            LOG.error(e.getMessage());
-
-            throw e;
         }
         finally
         {
