@@ -2,9 +2,12 @@ package com.insightservice.springboot.controller;
 
 import com.insightservice.springboot.model.codebase.Codebase;
 import com.insightservice.springboot.model.codebase.DashboardModel;
+import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.payload.UrlPayload;
 import com.insightservice.springboot.service.RepositoryAnalysisService;
 import com.insightservice.springboot.utility.DashboardCalculationUtility;
+import com.insightservice.springboot.utility.GroupFileObjectUtility;
+import com.insightservice.springboot.utility.commit_history.JGitHelper;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -13,6 +16,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.TreeSet;
 
 import static com.insightservice.springboot.Constants.LOG;
 
@@ -27,11 +32,10 @@ public class RepositoryAnalysisController
     public ResponseEntity<?> cloneMyRepository(@RequestBody UrlPayload urlPayload, BindingResult result) throws GitAPIException, IOException
     {
         String remoteUrl = urlPayload.getGithubUrl();
-        repositoryAnalysisService.cloneRemoteRepository(remoteUrl);
 
         LOG.info("Beginning analysis of the repository with URL `"+ remoteUrl +"`...");
         //Analyze Codebase
-        Codebase codebase = RepositoryAnalysisService.extractData(remoteUrl);
+        Codebase codebase = repositoryAnalysisService.extractData(remoteUrl);
         //DashboardCalculationUtility.assignDashboardData(codebase);
 
         return new ResponseEntity<Codebase>(codebase, HttpStatus.OK);
@@ -41,11 +45,10 @@ public class RepositoryAnalysisController
     public ResponseEntity<?> computeDashboardData(@RequestBody UrlPayload urlPayload, BindingResult result) throws GitAPIException, IOException
     {
         String remoteUrl = urlPayload.getGithubUrl();
-        repositoryAnalysisService.cloneRemoteRepository(remoteUrl);
 
         LOG.info("Beginning analysis of the repository with URL `"+ remoteUrl +"`...");
         //Analyze Codebase
-        Codebase codebase = RepositoryAnalysisService.extractData(remoteUrl);
+        Codebase codebase = repositoryAnalysisService.extractData(remoteUrl);
 
         //TODO we'd want to write the codebase to the database here so that it can be retrieved later.
 
@@ -53,5 +56,28 @@ public class RepositoryAnalysisController
         DashboardModel dashboardModel = DashboardCalculationUtility.assignDashboardData(codebase);
 
         return new ResponseEntity<DashboardModel>(dashboardModel, HttpStatus.OK);
+    }
+
+    @PostMapping("/group-by-package")
+    public ResponseEntity<?> performCodebaseAnalysisByPackage(@RequestBody UrlPayload urlPayload, BindingResult result) throws GitAPIException, IOException
+    {
+        String remoteUrl = urlPayload.getGithubUrl();
+
+        LOG.info("Beginning analysis of the repository with URL `"+ remoteUrl +"`...");
+        //Analyze Codebase
+        Codebase codebase = repositoryAnalysisService.extractData(remoteUrl);
+
+        String pathToRepos = JGitHelper.getPathOfLocalRepository(remoteUrl).getPath();
+        codebase.setProjectRootPath(pathToRepos);
+
+        Map<String, TreeSet<FileObject>> packageToFileMap = GroupFileObjectUtility.groupByPackage(codebase.getProjectRootPath(), codebase.getActiveFileObjects()); //method being tested
+
+        return new ResponseEntity<Map<String, TreeSet<FileObject>>>(packageToFileMap, HttpStatus.OK);
+    }
+
+    public void cloneRemoteRepository(String remoteUrl) throws GitAPIException, IOException
+    {
+        String DEFAULT_BRANCH = "master"; //TODO account for main, development, etc.
+        JGitHelper.cloneRepository(remoteUrl, DEFAULT_BRANCH);
     }
 }

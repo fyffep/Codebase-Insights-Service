@@ -13,19 +13,10 @@ import static com.insightservice.springboot.Constants.LOG;
 @Service
 public class RepositoryAnalysisService
 {
-    //region Vars
-    private static RepositoryAnalysisService instance;
-    //endregion
-
-    //region private Constructor
-    private RepositoryAnalysisService() {
-        //empty
-    }
-    //endregion
-
     public void cloneRemoteRepository(String remoteUrl) throws GitAPIException, IOException
     {
-        JGitHelper.cloneRepository(remoteUrl);
+        String DEFAULT_BRANCH = "master"; //TODO account for main, development, etc.
+        JGitHelper.cloneRepository(remoteUrl, DEFAULT_BRANCH);
     }
 
 
@@ -36,8 +27,10 @@ public class RepositoryAnalysisService
      * @param remoteUrl the URL to the home page of a user's GitHub repository
      * @return the Codebase containing all heat and file data.
      */
-    public static Codebase extractData(String remoteUrl) throws GitAPIException, IOException
+    public Codebase extractData(String remoteUrl) throws GitAPIException, IOException
     {
+        this.cloneRemoteRepository(remoteUrl);
+
         //Obtain file metrics by analyzing the code base
         RepositoryAnalyzer repositoryAnalyzer = null;
         try

@@ -8,8 +8,10 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.Arrays;
 
 import static com.insightservice.springboot.Constants.LOG;
 import static com.insightservice.springboot.Constants.REPO_STORAGE_DIR;
@@ -37,13 +39,13 @@ public class JGitHelper
         return repoName;
     }
 
-    private static File getPathOfLocalRepository(String remoteUrl) throws MalformedURLException
+    public static File getPathOfLocalRepository(String remoteUrl) throws MalformedURLException
     {
         String repoName = getRepositoryNameFromUrl(remoteUrl);
         return new File(REPO_STORAGE_DIR + File.separator + repoName);
     }
 
-    public static File cloneRepository(String remoteUrl) throws GitAPIException, IOException
+    public static File cloneRepository(String remoteUrl, String branchName) throws GitAPIException, IOException
     {
         //Make an empty dir for the cloned repo
         File directory = getPathOfLocalRepository(remoteUrl);
@@ -54,6 +56,7 @@ public class JGitHelper
         //Clone
         LOG.info("Cloning from " + remoteUrl + " to " + directory);
         try (Git result = Git.cloneRepository()
+                .setBranch(branchName) //Note to self: this line can be omitted to clone default branch
                 .setURI(remoteUrl)
                 .setDirectory(directory)
                 .call()) {
@@ -76,11 +79,19 @@ public class JGitHelper
 
     public static Repository openLocalRepository(File projectPath) throws IOException
     {
-        FileRepositoryBuilder builder = new FileRepositoryBuilder();
-        return builder
-                .readEnvironment() // scan environment GIT_* variables
-                .findGitDir(projectPath)
-                .build();
+        try
+        {
+            FileRepositoryBuilder builder = new FileRepositoryBuilder();
+            return builder
+                    .readEnvironment() // scan environment GIT_* variables
+                    .findGitDir(projectPath)
+                    .build();
+        }
+        catch (IllegalArgumentException ex)
+        {
+            throw new FileNotFoundException("openLocalRepository(...) failed. Perhaps the repository was not cloned yet. "
+                    + ex.toString());
+        }
     }
 
     public static Repository openLocalRepository(String remoteUrl) throws IOException

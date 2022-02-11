@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static intellij_extension.utility.RepositoryAnalyzerTest.PROJECT_ROOT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class HeatCalculationUtilityTest
 {
+    //TODO fix or delete this test
     /*@Test
     void calculateColorOfHeat()
     {

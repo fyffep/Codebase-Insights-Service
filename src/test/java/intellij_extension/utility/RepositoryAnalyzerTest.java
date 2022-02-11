@@ -7,7 +7,7 @@ import com.insightservice.springboot.utility.RepositoryAnalyzer;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -18,17 +18,8 @@ import static org.junit.jupiter.api.Assertions.*;
 public class RepositoryAnalyzerTest {
     //public static final File PROJECT_ROOT = new File(".");
     //public static final File BOOGUS_PROJECT_ROOT_1 = new File("BOOGUS PROJECT ROOT $#^&(#$*)!(_@");
-    public static final String REMOTE_URL = ""; //TODO: should be https://github.iu.edu/P532-Fall2021/team3-project/tree/master
+    public static final String REMOTE_URL = "https://github.com/fyffep/codebase-insights-intellij";
     public static final String BOGUS_REMOTE_URL = "https://gitfake.com/testdouble/java-testing-example";
-
-    // This test just infinitely loops, guessing automatically finding the repo doesn't work...
-//    @Test
-//    void constructor_Default_Success()
-//    {
-//        assertDoesNotThrow(() -> {
-//            RepositoryAnalyzer repo = new RepositoryAnalyzer();
-//        });
-//    }
 
     @Test
     void constructor_FilePathParameter_Success() {
@@ -37,41 +28,40 @@ public class RepositoryAnalyzerTest {
         });
     }
 
+    //No repo cloned yet -> cannot open the repo in RepositoryAnalyzer and IOException.
     @Test
-    void constructor_FilePathParameter_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> {
+    void constructor_RemoteUrlParameter_ThrowsFileNotFoundException() {
+        assertThrows(FileNotFoundException.class, () -> {
             new RepositoryAnalyzer(BOGUS_REMOTE_URL);
         });
     }
 
-    @Test
-    void attachBranchNameList_BranchesMasterDevelopment_Success() throws IOException, GitAPIException {
-        // Set up test data...
-        Codebase codebase = new Codebase();
-        RepositoryAnalyzer repositoryAnalyzer = new RepositoryAnalyzer(REMOTE_URL);
-        repositoryAnalyzer.attachBranchNameList(codebase); //method being tested
 
-        //Our branch list is always changing, so I just check if there are at least 3 branches.
-        assertTrue(codebase.getBranchNameList().size() >= 3);
-        // Ensure certain branches are present
-        assertTrue(codebase.getBranchNameList().contains("master"));
-        assertTrue(codebase.getBranchNameList().contains("development"));
-        // We could check more but everyone might not have the same branches checked out
-        // Master/development are reasonable to have and should be sufficient for the test.
-    }
+//    @Test
+//    void attachBranchNameList_BranchesMasterDevelopment_Success() throws IOException, GitAPIException {
+//        // Set up test data...
+//        Codebase codebase = new Codebase();
+//        JGitHelper.cloneRepository(REMOTE_URL, "master");
+//        RepositoryAnalyzer repositoryAnalyzer = new RepositoryAnalyzer(REMOTE_URL);
+//        repositoryAnalyzer.attachBranchNameList(codebase); //method being tested
+//
+//        //Our branch list is always changing, so I just check if there are at least 3 branches.
+//        assertTrue(codebase.getBranchNameList().size() >= 3);
+//        // Ensure certain branches are present
+//        assertTrue(codebase.getBranchNameList().contains("master"));
+//        assertTrue(codebase.getBranchNameList().contains("development"));
+//        // We could check more but everyone might not have the same branches checked out
+//        // Master/development are reasonable to have and should be sufficient for the test.
+//    }
 
     // Only test on dead branches.
     // Active branches will have a changing branch size.
     @Test
     void attachCodebaseData_BranchSize_ViewModelControllerBranch() throws IOException, GitAPIException {
-        int EXPECTED_BRANCH_SIZE = 101;
+        int EXPECTED_BRANCH_SIZE = 99;
 
         // Create test objects
-        Codebase codebase = new Codebase();
-        RepositoryAnalyzer repositoryAnalyzer = new RepositoryAnalyzer(REMOTE_URL);
-        repositoryAnalyzer.attachBranchNameList(codebase);
-        codebase.newBranchSelected("view-model-communication");
-        repositoryAnalyzer.attachCodebaseData(codebase); // method being tested
+        Codebase codebase = TempClassForRepoAnalysis.extractDataToCodebase(REMOTE_URL, "view-model-communication"); //method being tested
 
         assertEquals(EXPECTED_BRANCH_SIZE, codebase.getActiveCommits().size());
     }
@@ -83,11 +73,7 @@ public class RepositoryAnalyzerTest {
         int EXPECTED_BRANCH_SIZE = 59;
 
         // Create test objects
-        Codebase codebase = new Codebase();
-        RepositoryAnalyzer repositoryAnalyzer = new RepositoryAnalyzer(REMOTE_URL);
-        repositoryAnalyzer.attachBranchNameList(codebase);
-        codebase.newBranchSelected("ui-development-commit-history");
-        repositoryAnalyzer.attachCodebaseData(codebase); // method being tested
+        Codebase codebase = TempClassForRepoAnalysis.extractDataToCodebase(REMOTE_URL, "ui-development-commit-history"); //method being tested
 
         assertEquals(EXPECTED_BRANCH_SIZE, codebase.getActiveCommits().size());
     }
@@ -189,11 +175,7 @@ public class RepositoryAnalyzerTest {
         final String EXPECTED_EMAIL_OF_AUTHOR_10_2 = "fyffep";
 
         //Create test objects
-        Codebase codebase = new Codebase();
-        RepositoryAnalyzer repositoryAnalyzer = new RepositoryAnalyzer(REMOTE_URL);
-        repositoryAnalyzer.attachBranchNameList(codebase);
-        codebase.newBranchSelected("development");
-        repositoryAnalyzer.attachCodebaseData(codebase); //method being tested
+        Codebase codebase = TempClassForRepoAnalysis.extractDataToCodebase(REMOTE_URL, "development"); //method being tested
 
         // Verify the results
         FileObject fileObject = codebase.getFileObjectFromFilename(TEST_FILE_NAME);
@@ -325,7 +307,7 @@ public class RepositoryAnalyzerTest {
 
     // File's History: https://github.iu.edu/P532-Fall2021/team3-project/commits/d8dabff8ad133f719daeceaa863d9b5802c2b919/src/test/java/testdata/TestData.java
     @Test
-    void attachCodebaseData_FileHeatMetrics_TestData() throws IOException, GitAPIException {
+    void extractDataToCodebase_FileHeatMetrics_TestData() throws IOException, GitAPIException {
         final String TEST_FILE_NAME = "TestData.java";
 
         final String TEST_HASH_1 = "3d47a7d9f4a2dd4c4aa63d794616708a0d50d8ff"; // https://github.iu.edu/P532-Fall2021/team3-project/commit/3d47a7d9f4a2dd4c4aa63d794616708a0d50d8ff
@@ -406,11 +388,7 @@ public class RepositoryAnalyzerTest {
         final String EXPECTED_EMAIL_OF_AUTHOR_8_3 = "ebehar@iu.edu";
 
         //Create test objects
-        Codebase codebase = new Codebase();
-        RepositoryAnalyzer repositoryAnalyzer = new RepositoryAnalyzer(REMOTE_URL);
-        repositoryAnalyzer.attachBranchNameList(codebase);
-        codebase.newBranchSelected("development");
-        repositoryAnalyzer.attachCodebaseData(codebase); //method being tested
+        Codebase codebase = TempClassForRepoAnalysis.extractDataToCodebase(REMOTE_URL, "development"); //method being tested
 
         // Verify the results
         FileObject fileObject = codebase.getFileObjectFromFilename(TEST_FILE_NAME);
@@ -524,7 +502,7 @@ public class RepositoryAnalyzerTest {
 
     // File History: https://github.iu.edu/P532-Fall2021/team3-project/commits/view-model-communication/src/main/java/intellij_extension/observer/CodeBaseObservable.java
     @Test
-    void attachCodebaseData_FileHeatMetrics_CodeBaseObservable() throws IOException, GitAPIException {
+    void extractDataToCodebase_FileHeatMetrics_CodeBaseObservable() throws IOException, GitAPIException {
         final String TEST_FILE_NAME = "CodeBaseObservable.java";
 
         final String TEST_HASH_1 = "723a3eae7a8524b06733e9568f1b2240a0537b0b"; // https://github.iu.edu/P532-Fall2021/team3-project/commit/723a3eae7a8524b06733e9568f1b2240a0537b0b
@@ -555,11 +533,7 @@ public class RepositoryAnalyzerTest {
         final String EXPECTED_EMAIL_OF_AUTHOR_3_2 = "ebehar@iu.edu";
 
         //Create test objects
-        Codebase codebase = new Codebase();
-        RepositoryAnalyzer repositoryAnalyzer = new RepositoryAnalyzer(REMOTE_URL);
-        repositoryAnalyzer.attachBranchNameList(codebase);
-        codebase.newBranchSelected("view-model-communication");
-        repositoryAnalyzer.attachCodebaseData(codebase); //method being tested
+        Codebase codebase = TempClassForRepoAnalysis.extractDataToCodebase(REMOTE_URL, "view-model-communication"); //method being tested
 
         // Verify the results
         FileObject fileObject = codebase.getFileObjectFromFilename(TEST_FILE_NAME);
@@ -588,6 +562,7 @@ public class RepositoryAnalyzerTest {
 
         // Verify the results
         heatObject = fileObject.getHeatObjectAtCommit(TEST_HASH_3);
+        assert heatObject != null; //FIXME FAILS
         // Ensures we have the right object
         assertEquals(TEST_FILE_NAME, fileObject.getFilename());
         assertEquals(TEST_FILE_NAME, heatObject.getFilename());

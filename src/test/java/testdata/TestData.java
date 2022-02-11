@@ -1,6 +1,9 @@
 package testdata;
 
-public class TestData {
+public class TestData
+{
+    public static final String REMOTE_URL = "https://github.com/fyffep/codebase-insights-intellij";
+    public static final String BOGUS_REMOTE_URL = "https://gitfake.com/testdouble/java-testing-example";
 
     public static final int NUMBER_OF_COMMITS_IN_GITIGNORE = 16; //TODO has to be changed when our .gitignore is updated!
     public static long TEST_DEFAULT_FILE_COUNT = 0;
