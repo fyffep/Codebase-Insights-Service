@@ -1,6 +1,7 @@
 package com.insightservice.springboot.model.codebase;
 
 import com.insightservice.springboot.Constants;
+import com.insightservice.springboot.model.file_tree.RepoTreeNode;
 import com.insightservice.springboot.utility.RepositoryAnalyzer;
 
 import java.nio.file.Path;
@@ -16,8 +17,8 @@ import java.util.Set;
  * - Map<CommitHash, HeatObject>;
  * - HeatObject has the metrics for this file per commit
  */
-public class FileObject {
-
+public class FileObject implements RepoTreeNode
+{
     // region Variables
     private Path path;
     private String filename;

@@ -1,13 +1,12 @@
 package com.insightservice.springboot.controller;
 
+import com.insightservice.springboot.model.file_tree.RepoPackage;
 import com.insightservice.springboot.model.codebase.Codebase;
 import com.insightservice.springboot.model.codebase.DashboardModel;
 import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.payload.UrlPayload;
 import com.insightservice.springboot.service.RepositoryAnalysisService;
 import com.insightservice.springboot.utility.DashboardCalculationUtility;
-import com.insightservice.springboot.utility.GroupFileObjectUtility;
-import com.insightservice.springboot.utility.commit_history.JGitHelper;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,9 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.File;
 import java.io.IOException;
-import java.util.Map;
-import java.util.TreeSet;
 
 import static com.insightservice.springboot.Constants.LOG;
 import static com.insightservice.springboot.Constants.USE_DEFAULT_BRANCH;
@@ -58,20 +56,33 @@ public class RepositoryAnalysisController
         return new ResponseEntity<DashboardModel>(dashboardModel, HttpStatus.OK);
     }
 
+//    @PostMapping("/group-by-package")
+//    public ResponseEntity<?> performCodebaseAnalysisByPackage(@RequestBody UrlPayload urlPayload, BindingResult result) throws GitAPIException, IOException
+//    {
+//        String remoteUrl = urlPayload.getGithubUrl();
+//
+//        LOG.info("Beginning analysis of the repository with URL `"+ remoteUrl +"`...");
+//        //Analyze Codebase
+//        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(remoteUrl, USE_DEFAULT_BRANCH);
+//
+//        String pathToRepos = JGitHelper.getPathOfLocalRepository(remoteUrl).getPath();
+//        codebase.setProjectRootPath(pathToRepos);
+//
+//        Map<String, TreeSet<FileObject>> packageToFileMap = GroupFileObjectUtility.groupByPackage(codebase.getProjectRootPath(), codebase.getActiveFileObjects()); //method being tested
+//
+//        return new ResponseEntity<Map<String, TreeSet<FileObject>>>(packageToFileMap, HttpStatus.OK);
+//    }
+
     @PostMapping("/group-by-package")
     public ResponseEntity<?> performCodebaseAnalysisByPackage(@RequestBody UrlPayload urlPayload, BindingResult result) throws GitAPIException, IOException
     {
-        String remoteUrl = urlPayload.getGithubUrl();
+        RepoPackage repoPackage = new RepoPackage(new File(".").toPath());
+        repoPackage.addFileTreeNode(new FileObject(new File("alpha.java").toPath()));
 
-        LOG.info("Beginning analysis of the repository with URL `"+ remoteUrl +"`...");
-        //Analyze Codebase
-        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(remoteUrl, USE_DEFAULT_BRANCH);
+        RepoPackage subPackage = new RepoPackage(new File("src").toPath());
+        subPackage.addFileTreeNode(new FileObject(new File("beta.java").toPath()));
+        repoPackage.addFileTreeNode(subPackage);
 
-        String pathToRepos = JGitHelper.getPathOfLocalRepository(remoteUrl).getPath();
-        codebase.setProjectRootPath(pathToRepos);
-
-        Map<String, TreeSet<FileObject>> packageToFileMap = GroupFileObjectUtility.groupByPackage(codebase.getProjectRootPath(), codebase.getActiveFileObjects()); //method being tested
-
-        return new ResponseEntity<Map<String, TreeSet<FileObject>>>(packageToFileMap, HttpStatus.OK);
+        return new ResponseEntity<>(repoPackage, HttpStatus.OK);
     }
 }

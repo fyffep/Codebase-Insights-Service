@@ -1,4 +1,4 @@
-package intellij_extension.utility;
+package intellij_extension.service;
 
 import com.insightservice.springboot.model.codebase.Codebase;
 import com.insightservice.springboot.model.codebase.FileObject;
