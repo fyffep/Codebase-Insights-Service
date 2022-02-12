@@ -7,6 +7,7 @@ import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.payload.UrlPayload;
 import com.insightservice.springboot.service.RepositoryAnalysisService;
 import com.insightservice.springboot.utility.DashboardCalculationUtility;
+import com.insightservice.springboot.utility.FileTreeCreator;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -56,33 +57,20 @@ public class RepositoryAnalysisController
         return new ResponseEntity<DashboardModel>(dashboardModel, HttpStatus.OK);
     }
 
-//    @PostMapping("/group-by-package")
-//    public ResponseEntity<?> performCodebaseAnalysisByPackage(@RequestBody UrlPayload urlPayload, BindingResult result) throws GitAPIException, IOException
-//    {
-//        String remoteUrl = urlPayload.getGithubUrl();
-//
-//        LOG.info("Beginning analysis of the repository with URL `"+ remoteUrl +"`...");
-//        //Analyze Codebase
-//        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(remoteUrl, USE_DEFAULT_BRANCH);
-//
-//        String pathToRepos = JGitHelper.getPathOfLocalRepository(remoteUrl).getPath();
-//        codebase.setProjectRootPath(pathToRepos);
-//
-//        Map<String, TreeSet<FileObject>> packageToFileMap = GroupFileObjectUtility.groupByPackage(codebase.getProjectRootPath(), codebase.getActiveFileObjects()); //method being tested
-//
-//        return new ResponseEntity<Map<String, TreeSet<FileObject>>>(packageToFileMap, HttpStatus.OK);
-//    }
-
+    /**
+     * Returns a tree structure of files for a Codebase with a RepoPackage as its root.
+     */
     @PostMapping("/group-by-package")
     public ResponseEntity<?> performCodebaseAnalysisByPackage(@RequestBody UrlPayload urlPayload, BindingResult result) throws GitAPIException, IOException
     {
-        RepoPackage repoPackage = new RepoPackage(new File(".").toPath());
-        repoPackage.addFileTreeNode(new FileObject(new File("alpha.java").toPath()));
+        String remoteUrl = urlPayload.getGithubUrl();
 
-        RepoPackage subPackage = new RepoPackage(new File("src").toPath());
-        subPackage.addFileTreeNode(new FileObject(new File("beta.java").toPath()));
-        repoPackage.addFileTreeNode(subPackage);
+        LOG.info("Beginning analysis of the repository with URL `"+ remoteUrl +"`...");
+        //Analyze Codebase
+        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(remoteUrl, USE_DEFAULT_BRANCH);
 
-        return new ResponseEntity<>(repoPackage, HttpStatus.OK);
+        RepoPackage fileTree = FileTreeCreator.createFileTree(codebase.getActiveFileObjects());
+
+        return new ResponseEntity<>(fileTree, HttpStatus.OK);
     }
 }

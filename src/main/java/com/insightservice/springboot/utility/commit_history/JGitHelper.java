@@ -35,7 +35,6 @@ public class JGitHelper
             throw new MalformedURLException(remoteUrl + " is not a valid repository URL.");
         }
         String repoName = repoNameArr[repoNameArr.length - 1];
-        //TODO trim ".git" from URL
         return repoName;
     }
 
