@@ -15,6 +15,7 @@ public class Constants
 
     // Default Branches
     public static final String[] DEFAULT_BRANCHES = {"development", "master", "main"};
+    public static final String USE_DEFAULT_BRANCH = "master";
 
     public static final GroupingMode DEFAULT_GROUPING = GroupingMode.PACKAGES;
     public enum GroupingMode {

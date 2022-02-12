@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.TreeSet;
 
 import static com.insightservice.springboot.Constants.LOG;
+import static com.insightservice.springboot.Constants.USE_DEFAULT_BRANCH;
 
 @RestController
 @RequestMapping("/api/analyze")
@@ -29,14 +30,13 @@ public class RepositoryAnalysisController
     private RepositoryAnalysisService repositoryAnalysisService;
 
     @PostMapping("/codebase")
-    public ResponseEntity<?> cloneMyRepository(@RequestBody UrlPayload urlPayload, BindingResult result) throws GitAPIException, IOException
+    public ResponseEntity<?> analyzeEntireCodebase(@RequestBody UrlPayload urlPayload, BindingResult result) throws GitAPIException, IOException
     {
         String remoteUrl = urlPayload.getGithubUrl();
 
         LOG.info("Beginning analysis of the repository with URL `"+ remoteUrl +"`...");
         //Analyze Codebase
-        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(remoteUrl, "master"); //TODO consider other branches
-        //DashboardCalculationUtility.assignDashboardData(codebase);
+        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(remoteUrl, USE_DEFAULT_BRANCH);
 
         return new ResponseEntity<Codebase>(codebase, HttpStatus.OK);
     }
@@ -48,7 +48,7 @@ public class RepositoryAnalysisController
 
         LOG.info("Beginning analysis of the repository with URL `"+ remoteUrl +"`...");
         //Analyze Codebase
-        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(remoteUrl, "master"); //TODO consider other branches
+        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(remoteUrl, USE_DEFAULT_BRANCH);
 
         //TODO we'd want to write the codebase to the database here so that it can be retrieved later.
 
@@ -65,7 +65,7 @@ public class RepositoryAnalysisController
 
         LOG.info("Beginning analysis of the repository with URL `"+ remoteUrl +"`...");
         //Analyze Codebase
-        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(remoteUrl, "master"); //TODO consider other branches
+        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(remoteUrl, USE_DEFAULT_BRANCH);
 
         String pathToRepos = JGitHelper.getPathOfLocalRepository(remoteUrl).getPath();
         codebase.setProjectRootPath(pathToRepos);
@@ -73,11 +73,5 @@ public class RepositoryAnalysisController
         Map<String, TreeSet<FileObject>> packageToFileMap = GroupFileObjectUtility.groupByPackage(codebase.getProjectRootPath(), codebase.getActiveFileObjects()); //method being tested
 
         return new ResponseEntity<Map<String, TreeSet<FileObject>>>(packageToFileMap, HttpStatus.OK);
-    }
-
-    public void cloneRemoteRepository(String remoteUrl) throws GitAPIException, IOException
-    {
-        String DEFAULT_BRANCH = "master"; //TODO account for main, development, etc.
-        JGitHelper.cloneRepository(remoteUrl, DEFAULT_BRANCH);
     }
 }

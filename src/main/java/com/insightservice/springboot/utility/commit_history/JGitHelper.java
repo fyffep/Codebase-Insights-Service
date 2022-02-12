@@ -2,6 +2,7 @@ package com.insightservice.springboot.utility.commit_history;
 
 import com.insightservice.springboot.exception.BadUrlException;
 import org.apache.tomcat.util.http.fileupload.FileUtils;
+import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
@@ -13,8 +14,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 
-import static com.insightservice.springboot.Constants.LOG;
-import static com.insightservice.springboot.Constants.REPO_STORAGE_DIR;
+import static com.insightservice.springboot.Constants.*;
 
 /**
  * Contains utility methods for opening Git repositories.
@@ -55,16 +55,37 @@ public class JGitHelper
 
         //Clone
         LOG.info("Cloning from " + remoteUrl + " to " + directory);
-        try (Git result = Git.cloneRepository()
-                .setBranch(branchName) //Note to self: this line can be omitted to clone default branch
-                .setURI(remoteUrl)
-                .setDirectory(directory)
-                .call()) {
-        }
-        catch (Exception ex)
+        //Use default branch (master/main/etc)
+        if (branchName.equals(USE_DEFAULT_BRANCH) || branchName.isBlank())
         {
-            throw new BadUrlException("No repository could be read from your GitHub URL.");
+            try (Git result = Git.cloneRepository()
+                    //Note lack of setBranch(...) call
+                    .setURI(remoteUrl)
+                    .setDirectory(directory)
+                    .call()) {
+                //TODO test with repos where only main or development exists
+            }
+            catch (Exception ex)
+            {
+                throw new BadUrlException("No repository could be read from your GitHub URL.");
+            }
         }
+        //Else, choose specific branch
+        else
+        {
+            try (Git result = Git.cloneRepository()
+                    .setBranch(branchName)
+                    .setURI(remoteUrl)
+                    .setDirectory(directory)
+                    .call()) {
+            }
+            catch (Exception ex)
+            {
+                throw new BadUrlException("No repository could be read from your GitHub URL.");
+            }
+        }
+
+
 
         return directory;
     }

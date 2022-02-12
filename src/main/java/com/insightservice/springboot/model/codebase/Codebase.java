@@ -153,28 +153,31 @@ public class Codebase implements CodeBaseObservable {
         notifyObserversOfBranchList();
     }
 
-    public void newBranchSelected(String branchName) {
-        // Branch doesn't exist - or we don't know about it some how...
-        if (!branchNameList.contains(branchName) && !branchName.isEmpty()) {
-            throw new UnsupportedOperationException(String.format("Branch %s was selected but is not present in branchNameList.", branchName));
-        }
-
-        this.activeBranch = branchName;
-
-        // Dump old data and create new sets
-        activeCommits.clear();
-        activeCommits = new LinkedHashSet<>();
-        activeFileObjects.clear();
-        activeFileObjects = new LinkedHashSet<>();
-        packageBasedMapGroup = new TreeMap<>();
-        packageBasedMapGroup.clear();
-        commitBasedMapGroup = new TreeMap<>();
-        commitBasedMapGroup.clear();
-        latestCommitHash = "";
-
-        RepositoryAnalyzer.attachCodebaseData(this);
-
-        notifyObserversOfBranchChange(getSetOfFiles(), targetCommit, currentGroupingMode, currentHeatMetricOption);
+//    public void newBranchSelected(String branchName) {
+//        // Branch doesn't exist - or we don't know about it some how...
+//        if (!branchNameList.contains(branchName) && !branchName.isEmpty()) {
+//            throw new UnsupportedOperationException(String.format("Branch %s was selected but is not present in branchNameList.", branchName));
+//        }
+//
+//        this.activeBranch = branchName;
+//
+//        // Dump old data and create new sets
+//        activeCommits.clear();
+//        activeCommits = new LinkedHashSet<>();
+//        activeFileObjects.clear();
+//        activeFileObjects = new LinkedHashSet<>();
+//        packageBasedMapGroup = new TreeMap<>();
+//        packageBasedMapGroup.clear();
+//        commitBasedMapGroup = new TreeMap<>();
+//        commitBasedMapGroup.clear();
+//        latestCommitHash = "";
+//
+//        RepositoryAnalyzer.attachCodebaseData(this); //TODO reconsider whether we should support branch change via cloning all branches at once
+//
+//        notifyObserversOfBranchChange(getSetOfFiles(), targetCommit, currentGroupingMode, currentHeatMetricOption);
+//    }
+    public void setActiveBranch(String activeBranch) {
+        this.activeBranch = activeBranch;
     }
 
     public void newHeatMetricSelected(HeatMetricOptions newHeatMetricOption) {

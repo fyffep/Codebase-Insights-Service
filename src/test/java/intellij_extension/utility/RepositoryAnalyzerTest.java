@@ -17,7 +17,6 @@ import static testdata.TestData.REMOTE_URL;
 
 /**
  * UNIT TESTING
- * If you fail any of these tests locally it might be because you don't have the branches checked out.
  */
 public class RepositoryAnalyzerTest {
     /**
@@ -37,10 +36,10 @@ public class RepositoryAnalyzerTest {
             repositoryAnalyzer = new RepositoryAnalyzer(remoteUrl);
 
             Codebase codebase = new Codebase();
+            codebase.setActiveBranch(branchName);
 
             //Perform analysis
             RepositoryAnalyzer.attachBranchNameList(codebase);
-            codebase.newBranchSelected(branchName); //triggers attachCodebaseData(...)
 
             //Now the Codebase contains all the data it needs
             LOG.info("Heat calculations complete. Number of files: " + codebase.getActiveFileObjects().size());
