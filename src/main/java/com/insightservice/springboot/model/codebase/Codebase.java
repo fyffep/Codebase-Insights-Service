@@ -85,6 +85,23 @@ public class Codebase implements CodeBaseObservable {
         return activeFileObjects;
     }
 
+    /**
+     * Returns a copy of Codebase's file set.
+     * It represents all files present at the target commit, excluding the files deleted by people.
+     */
+    public HashSet<FileObject> getActiveFileObjectsExcludeDeletedFiles(String commitHash) {
+        HashSet<FileObject> fileSetCopy = new HashSet<>();
+        for (FileObject fileObject : activeFileObjects)
+        {
+            HeatObject heatObject = fileObject.getHeatObjectAtCommit(commitHash);
+            if (heatObject != null)
+                fileSetCopy.add(fileObject);
+            //else, if there is no HeatObject for the file at the target commit, the file was deleted
+        }
+
+        return fileSetCopy;
+    }
+
     public String getProjectRootPath() {
         return projectRootPath;
     }

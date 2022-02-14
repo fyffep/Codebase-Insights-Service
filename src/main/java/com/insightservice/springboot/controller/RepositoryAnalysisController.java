@@ -1,13 +1,13 @@
 package com.insightservice.springboot.controller;
 
+import com.insightservice.springboot.Constants;
+import com.insightservice.springboot.model.codebase.*;
 import com.insightservice.springboot.model.file_tree.RepoPackage;
-import com.insightservice.springboot.model.codebase.Codebase;
-import com.insightservice.springboot.model.codebase.DashboardModel;
-import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.payload.UrlPayload;
 import com.insightservice.springboot.service.RepositoryAnalysisService;
 import com.insightservice.springboot.utility.DashboardCalculationUtility;
 import com.insightservice.springboot.utility.FileTreeCreator;
+import com.insightservice.springboot.utility.HeatCalculationUtility;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -69,7 +69,9 @@ public class RepositoryAnalysisController
         //Analyze Codebase
         Codebase codebase = repositoryAnalysisService.extractDataToCodebase(remoteUrl, USE_DEFAULT_BRANCH);
 
-        RepoPackage fileTree = FileTreeCreator.createFileTree(codebase.getActiveFileObjects());
+        //Format the files present on the latest commit into a tree structure
+        RepoPackage fileTree = FileTreeCreator.createFileTree(
+                codebase.getActiveFileObjectsExcludeDeletedFiles(codebase.getLatestCommitHash()));
 
         return new ResponseEntity<>(fileTree, HttpStatus.OK);
     }
