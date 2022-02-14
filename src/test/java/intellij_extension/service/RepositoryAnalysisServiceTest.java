@@ -6,12 +6,12 @@ import com.insightservice.springboot.model.codebase.HeatObject;
 import com.insightservice.springboot.service.RepositoryAnalysisService;
 import com.insightservice.springboot.utility.RepositoryAnalyzer;
 import com.insightservice.springboot.utility.commit_history.JGitHelper;
+import intellij_extension.model.file_tree.RepositoryAnalysisServiceConfiguration;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
@@ -26,16 +26,9 @@ import static testdata.TestData.REMOTE_URL;
  * but with RepositoryAnalysisService involved.
  */
 @RunWith(SpringRunner.class)
-public class RepositoryAnalysisServiceTest {
-
-    //Mock instance of RepositoryAnalysisService
-    @TestConfiguration
-    static class RepositoryAnalysisServiceImplTestContextConfiguration {
-        @Bean
-        public RepositoryAnalysisService repositoryAnalysisService() {
-            return new RepositoryAnalysisService();
-        }
-    }
+@Import(RepositoryAnalysisServiceConfiguration.class)
+public class RepositoryAnalysisServiceTest
+{
     @Autowired
     RepositoryAnalysisService repositoryAnalysisService;
 

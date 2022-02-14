@@ -1,9 +1,5 @@
 package com.insightservice.springboot.utility;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.insightservice.springboot.model.codebase.Codebase;
 import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.model.file_tree.RepoPackage;
 import com.insightservice.springboot.model.file_tree.RepoTreeNode;
@@ -82,16 +78,5 @@ public class FileTreeCreator
             //Add the file to the dir
             currentDirectory.addFileTreeNode(fileToInsert);
         }
-    }
-
-    public static void main(String[] args) throws JsonProcessingException {
-        Codebase codebase = new Codebase();
-        codebase.getActiveFileObjects().add(new FileObject(Path.of("src/MyClass.java")));
-        codebase.getActiveFileObjects().add(new FileObject(Path.of("src/model/MyModel.java")));
-        RepoPackage output = createFileTree(codebase.getActiveFileObjects());
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-        System.out.println(objectMapper.writeValueAsString(output));
     }
 }

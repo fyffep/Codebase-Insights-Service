@@ -2,19 +2,16 @@ package intellij_extension.model.file_tree;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.model.file_tree.RepoPackage;
-import com.insightservice.springboot.serialize.PathSerializer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit4.SpringRunner;
+import configuration.ObjectMapperConfiguration;
 
 import java.io.File;
-import java.nio.file.Path;
 
 import static org.junit.Assert.assertEquals;
 
@@ -25,27 +22,15 @@ import static org.junit.Assert.assertEquals;
  * arranged as expected.
  */
 @RunWith(SpringRunner.class)
+@Import(ObjectMapperConfiguration.class)
 public class RepoPackageTest
 {
-    //Simulate the ObjectMapper that is used for Spring runtime
-    @TestConfiguration
-    static class ObjectMapperImplTestContextConfiguration {
-        @Bean
-        public ObjectMapper objectMapper() {
-            ObjectMapper objectMapper = new ObjectMapper();
-            SimpleModule module = new SimpleModule();
-            module.addSerializer(Path.class, new PathSerializer());
-            objectMapper.registerModule(module);
-
-            return objectMapper;
-        }
-    }
     @Autowired
     ObjectMapper objectMapper;
 
     //Ensure a RepoPackage can be created with no difficulties
     @Test
-    public void addFileTreeNode_Structure_PathSerializer() throws JsonProcessingException {
+    public void addFileTreeNode_JsonStructure_Mock() throws JsonProcessingException {
         RepoPackage rootPackage = new RepoPackage(new File(".").toPath());
         rootPackage.addFileTreeNode(new FileObject(new File("alpha.java").toPath()));
 
