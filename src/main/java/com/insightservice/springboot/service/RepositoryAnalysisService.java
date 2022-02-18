@@ -1,6 +1,7 @@
 package com.insightservice.springboot.service;
 
 import com.insightservice.springboot.model.codebase.Codebase;
+import com.insightservice.springboot.utility.HeatCalculationUtility;
 import com.insightservice.springboot.utility.RepositoryAnalyzer;
 import com.insightservice.springboot.utility.commit_history.JGitHelper;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -35,11 +36,13 @@ public class RepositoryAnalysisService
             this.cloneRemoteRepository(remoteUrl, branchName);
             Codebase codebase = new Codebase();
 
-            //Calculate file sizes for every commit
+            //Calculate heat metrics for every commit
             repositoryAnalyzer = new RepositoryAnalyzer(remoteUrl);
             RepositoryAnalyzer.attachBranchNameList(codebase);
             codebase.selectDefaultBranch();
             RepositoryAnalyzer.attachCodebaseData(codebase);
+
+            HeatCalculationUtility.assignHeatLevels(codebase);
 
             //Now the Codebase contains all the data it needs
             LOG.info("Heat calculations complete. Number of files: " + codebase.getActiveFileObjects().size());
