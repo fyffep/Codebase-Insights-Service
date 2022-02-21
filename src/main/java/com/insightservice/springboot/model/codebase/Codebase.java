@@ -85,6 +85,23 @@ public class Codebase implements CodeBaseObservable {
         return activeFileObjects;
     }
 
+    /**
+     * Returns a copy of Codebase's file set.
+     * It represents all files present at the target commit, excluding the files deleted by people.
+     */
+    public HashSet<FileObject> getActiveFileObjectsExcludeDeletedFiles(String commitHash) {
+        HashSet<FileObject> fileSetCopy = new HashSet<>();
+        for (FileObject fileObject : activeFileObjects)
+        {
+            HeatObject heatObject = fileObject.getHeatObjectAtCommit(commitHash);
+            if (heatObject != null)
+                fileSetCopy.add(fileObject);
+            //else, if there is no HeatObject for the file at the target commit, the file was deleted
+        }
+
+        return fileSetCopy;
+    }
+
     public String getProjectRootPath() {
         return projectRootPath;
     }
@@ -153,28 +170,31 @@ public class Codebase implements CodeBaseObservable {
         notifyObserversOfBranchList();
     }
 
-    public void newBranchSelected(String branchName) {
-        // Branch doesn't exist - or we don't know about it some how...
-        if (!branchNameList.contains(branchName) && !branchName.isEmpty()) {
-            throw new UnsupportedOperationException(String.format("Branch %s was selected but is not present in branchNameList.", branchName));
-        }
-
-        this.activeBranch = branchName;
-
-        // Dump old data and create new sets
-        activeCommits.clear();
-        activeCommits = new LinkedHashSet<>();
-        activeFileObjects.clear();
-        activeFileObjects = new LinkedHashSet<>();
-        packageBasedMapGroup = new TreeMap<>();
-        packageBasedMapGroup.clear();
-        commitBasedMapGroup = new TreeMap<>();
-        commitBasedMapGroup.clear();
-        latestCommitHash = "";
-
-        RepositoryAnalyzer.attachCodebaseData(this);
-
-        notifyObserversOfBranchChange(getSetOfFiles(), targetCommit, currentGroupingMode, currentHeatMetricOption);
+//    public void newBranchSelected(String branchName) {
+//        // Branch doesn't exist - or we don't know about it some how...
+//        if (!branchNameList.contains(branchName) && !branchName.isEmpty()) {
+//            throw new UnsupportedOperationException(String.format("Branch %s was selected but is not present in branchNameList.", branchName));
+//        }
+//
+//        this.activeBranch = branchName;
+//
+//        // Dump old data and create new sets
+//        activeCommits.clear();
+//        activeCommits = new LinkedHashSet<>();
+//        activeFileObjects.clear();
+//        activeFileObjects = new LinkedHashSet<>();
+//        packageBasedMapGroup = new TreeMap<>();
+//        packageBasedMapGroup.clear();
+//        commitBasedMapGroup = new TreeMap<>();
+//        commitBasedMapGroup.clear();
+//        latestCommitHash = "";
+//
+//        RepositoryAnalyzer.attachCodebaseData(this); //TODO reconsider whether we should support branch change via cloning all branches at once
+//
+//        notifyObserversOfBranchChange(getSetOfFiles(), targetCommit, currentGroupingMode, currentHeatMetricOption);
+//    }
+    public void setActiveBranch(String activeBranch) {
+        this.activeBranch = activeBranch;
     }
 
     public void newHeatMetricSelected(HeatMetricOptions newHeatMetricOption) {

@@ -21,9 +21,9 @@ C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\service\DatabaseDemoService.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\utility\filesize\FileSizeCalculator.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\observer\CodeBaseObservable.java
-C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\payload\UrlResquest.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\repository\UserRepository.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\utility\commit_history\JGitHelper.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\model\codebase\FileObject.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\service\ErrorMapValidationService.java
+C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\payload\UrlPayload.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\utility\DashboardCalculationUtility.java

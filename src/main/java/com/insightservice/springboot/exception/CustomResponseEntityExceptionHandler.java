@@ -17,11 +17,19 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @ControllerAdvice
 public class CustomResponseEntityExceptionHandler extends ResponseEntityExceptionHandler
 {
-    //Malformed URL
+    //Malformed GitHub URL
     @ExceptionHandler
     public final ResponseEntity<Object> handleBadUrlException(BadUrlException ex, WebRequest request)
     {
         BadUrlExceptionResponse exceptionResponse = new BadUrlExceptionResponse(ex.getMessage());
+        return new ResponseEntity(exceptionResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    //Non-existent GitHub branch
+    @ExceptionHandler
+    public final ResponseEntity<Object> handleBadBranchException(BadBranchException ex, WebRequest request)
+    {
+        BadBranchExceptionResponse exceptionResponse = new BadBranchExceptionResponse(ex.getMessage());
         return new ResponseEntity(exceptionResponse, HttpStatus.BAD_REQUEST);
     }
 }

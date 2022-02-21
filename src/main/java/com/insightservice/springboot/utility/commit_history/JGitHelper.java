@@ -1,5 +1,6 @@
 package com.insightservice.springboot.utility.commit_history;
 
+import com.insightservice.springboot.exception.BadBranchException;
 import com.insightservice.springboot.exception.BadUrlException;
 import org.apache.tomcat.util.http.fileupload.FileUtils;
 import org.eclipse.jgit.api.Git;
@@ -8,11 +9,11 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
-import static com.insightservice.springboot.Constants.LOG;
-import static com.insightservice.springboot.Constants.REPO_STORAGE_DIR;
+import static com.insightservice.springboot.Constants.*;
 
 /**
  * Contains utility methods for opening Git repositories.
@@ -28,40 +29,68 @@ public class JGitHelper
     {
         //Determine name of new directory
         String[] repoNameArr = remoteUrl.strip().split("/");
-        if (repoNameArr.length < 3) //at least 2 slashes are in a Git URL
+        if (repoNameArr.length < 5) //at least 4 slashes are in a Git URL
         {
             throw new MalformedURLException(remoteUrl + " is not a valid repository URL.");
         }
         String repoName = repoNameArr[repoNameArr.length - 1];
-        //TODO trim ".git" from URL
         return repoName;
     }
 
-    private static File getPathOfLocalRepository(String remoteUrl) throws MalformedURLException
+    public static File getPathOfLocalRepository(String remoteUrl) throws MalformedURLException
     {
         String repoName = getRepositoryNameFromUrl(remoteUrl);
         return new File(REPO_STORAGE_DIR + File.separator + repoName);
     }
 
-    public static File cloneRepository(String remoteUrl) throws GitAPIException, IOException
+    public static File cloneRepository(String remoteUrl, String branchName) throws GitAPIException, IOException
     {
-        //Make an empty dir for the cloned repo
+        //Make a dir for the cloned repo
         File directory = getPathOfLocalRepository(remoteUrl);
+        //TODO the repo shouldn't be deleted if it the branch being used is the same. Need to figure out how to check current branch & pull.
         if (directory.exists())
             FileUtils.deleteDirectory(directory);
         directory.mkdirs();
 
         //Clone
         LOG.info("Cloning from " + remoteUrl + " to " + directory);
-        try (Git result = Git.cloneRepository()
-                .setURI(remoteUrl)
-                .setDirectory(directory)
-                .call()) {
-        }
-        catch (Exception ex)
+        //Use default branch (master/main/etc)
+        if (branchName.equals(USE_DEFAULT_BRANCH) || branchName.isBlank())
         {
-            throw new BadUrlException("No repository could be read from your GitHub URL.");
+            LOG.info("No branch specified.");
+            try (Git result = Git.cloneRepository()
+                    //Note lack of setBranch(...) call
+                    .setURI(remoteUrl)
+                    .setDirectory(directory)
+                    .call()) {
+            }
+            catch (Exception ex) //handles private and non-existent repos
+            {
+                throw new BadUrlException("No repository could be read from your GitHub URL.");
+            }
         }
+        //Else, choose specific branch
+        else
+        {
+            LOG.info("Using branch " + branchName);
+            try (Git result = Git.cloneRepository()
+                    .setBranch(branchName)
+                    .setURI(remoteUrl)
+                    .setDirectory(directory)
+                    .call()) {
+            }
+            catch (Exception ex) //handles private and non-existent repos
+            {
+                throw new BadUrlException("No repository could be read from your GitHub URL.");
+            }
+        }
+
+        //Ensure files were cloned successfully
+        File pathToRepo = JGitHelper.getPathOfLocalRepository(remoteUrl);
+        if (!pathToRepo.exists() || pathToRepo.list() == null)
+            throw new BadUrlException("Cloning your repository failed for an unknown reason.");
+        if (pathToRepo.list().length < 2) //if only the .git folder exists
+            throw new BadBranchException("The branch cloned was empty.");
 
         return directory;
     }
@@ -74,13 +103,21 @@ public class JGitHelper
         LOG.info("Removed the repository named `"+repoName+"` from the file system.");
     }
 
-    public static Repository openLocalRepository(File projectPath) throws IOException
+    private static Repository openLocalRepository(File projectPath) throws IOException
     {
-        FileRepositoryBuilder builder = new FileRepositoryBuilder();
-        return builder
-                .readEnvironment() // scan environment GIT_* variables
-                .findGitDir(projectPath)
-                .build();
+        try
+        {
+            FileRepositoryBuilder builder = new FileRepositoryBuilder();
+            return builder
+                    .readEnvironment() // scan environment GIT_* variables
+                    .findGitDir(projectPath)
+                    .build();
+        }
+        catch (IllegalArgumentException ex)
+        {
+            throw new FileNotFoundException("openLocalRepository(...) failed. Perhaps the repository was not cloned yet. "
+                    + ex.toString());
+        }
     }
 
     public static Repository openLocalRepository(String remoteUrl) throws IOException
