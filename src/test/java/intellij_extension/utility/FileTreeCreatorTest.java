@@ -7,8 +7,6 @@ import com.insightservice.springboot.model.file_tree.RepoPackage;
 import com.insightservice.springboot.model.file_tree.RepoTreeNode;
 import com.insightservice.springboot.service.RepositoryAnalysisService;
 import com.insightservice.springboot.utility.FileTreeCreator;
-import com.insightservice.springboot.utility.RepositoryAnalyzer;
-import com.insightservice.springboot.utility.commit_history.JGitHelper;
 import configuration.ObjectMapperConfiguration;
 import intellij_extension.model.file_tree.RepositoryAnalysisServiceConfiguration;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -16,13 +14,10 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 
 import static org.junit.Assert.*;
-import static testdata.TestData.MASTER_BRANCH;
-import static testdata.TestData.REMOTE_URL;
 
 @Import({ObjectMapperConfiguration.class, RepositoryAnalysisServiceConfiguration.class})
 public class FileTreeCreatorTest

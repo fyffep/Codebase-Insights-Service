@@ -27,7 +27,7 @@ public class JGitHelperTest
             FileUtils.deleteDirectory(CLONED_REPO_PATH);
 
         //Clone repo
-        JGitHelper.cloneRepository(REMOTE_URL, MASTER_BRANCH); //method being tested
+        JGitHelper.cloneRepository(VALID_REMOTE_URL, MASTER_BRANCH); //method being tested
 
         //Ensure it exists locally
         assertTrue(CLONED_REPO_PATH.exists());
@@ -53,7 +53,7 @@ public class JGitHelperTest
     //Ensure a local file path (i.e. the location of the cloned repo) can be determined from a URL correctly
     @Test
     void getPathOfLocalRepository_RemoteUrlParameter_TestData() throws MalformedURLException {
-        File file = JGitHelper.getPathOfLocalRepository(REMOTE_URL);  //method being tested
+        File file = JGitHelper.getPathOfLocalRepository(VALID_REMOTE_URL);  //method being tested
 
         assertEquals(file.getPath(), CLONED_REPO_PATH.getPath());
     }
