@@ -48,11 +48,9 @@ public class RepositoryAnalysisService
         }
         finally
         {
-            //Enable deletion of local repo
+            //Close the .git files
             if (repositoryAnalyzer != null)
                 repositoryAnalyzer.cleanup();
-            //Delete repos from local storage
-            JGitHelper.removeClonedRepository(remoteUrl);
         }
     }
 }

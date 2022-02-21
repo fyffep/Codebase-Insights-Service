@@ -13,7 +13,7 @@ import java.io.IOException;
 import static com.insightservice.springboot.Constants.LOG;
 import static org.junit.jupiter.api.Assertions.*;
 import static testdata.TestData.MASTER_BRANCH;
-import static testdata.TestData.REMOTE_URL;
+import static testdata.TestData.VALID_REMOTE_URL;
 
 /**
  * UNIT TESTING
@@ -31,15 +31,14 @@ public class RepositoryAnalyzerTest {
         RepositoryAnalyzer repositoryAnalyzer = null;
         try
         {
-            //Setup RepositoryAnalyzer
             JGitHelper.cloneRepository(remoteUrl, branchName);
-            repositoryAnalyzer = new RepositoryAnalyzer(remoteUrl);
-
             Codebase codebase = new Codebase();
-            codebase.setActiveBranch(branchName);
 
-            //Perform analysis
+            //Calculate file sizes for every commit
+            repositoryAnalyzer = new RepositoryAnalyzer(remoteUrl);
             RepositoryAnalyzer.attachBranchNameList(codebase);
+            codebase.selectDefaultBranch();
+            RepositoryAnalyzer.attachCodebaseData(codebase);
 
             //Now the Codebase contains all the data it needs
             LOG.info("Heat calculations complete. Number of files: " + codebase.getActiveFileObjects().size());
@@ -53,8 +52,11 @@ public class RepositoryAnalyzerTest {
 
             throw e;
         }
-        finally {
-            repositoryAnalyzer.cleanup();
+        finally
+        {
+            //Close the .git files
+            if (repositoryAnalyzer != null)
+                repositoryAnalyzer.cleanup();
         }
         //Do not delete cloned test repo
     }
@@ -64,17 +66,17 @@ public class RepositoryAnalyzerTest {
     @Test
     public void constructor_FilePathParameter_Success() {
         assertDoesNotThrow(() -> {
-            JGitHelper.cloneRepository(REMOTE_URL, MASTER_BRANCH);
-            new RepositoryAnalyzer(REMOTE_URL);
+            JGitHelper.cloneRepository(VALID_REMOTE_URL, MASTER_BRANCH);
+            new RepositoryAnalyzer(VALID_REMOTE_URL);
         });
     }
 
     //No repo cloned yet -> cannot open the repo in RepositoryAnalyzer.
     @Test
     public void constructor_NoClonedRepositoryExists_ThrowsAssertionError() throws IOException {
-        JGitHelper.removeClonedRepository(REMOTE_URL); //ensure repo does not exist
+        JGitHelper.removeClonedRepository(VALID_REMOTE_URL); //ensure repo does not exist
         assertThrows(AssertionError.class, () -> {
-            new RepositoryAnalyzer(REMOTE_URL);
+            new RepositoryAnalyzer(VALID_REMOTE_URL);
         });
     }
 
@@ -104,7 +106,7 @@ public class RepositoryAnalyzerTest {
         int EXPECTED_BRANCH_SIZE = 99;
 
         // Create test objects
-        Codebase codebase = extractDataToCodebase(REMOTE_URL, "view-model-communication"); //method being tested
+        Codebase codebase = extractDataToCodebase(VALID_REMOTE_URL, "view-model-communication"); //method being tested
 
         assertEquals(EXPECTED_BRANCH_SIZE, codebase.getActiveCommits().size());
     }
@@ -116,7 +118,7 @@ public class RepositoryAnalyzerTest {
         int EXPECTED_BRANCH_SIZE = 59;
 
         // Create test objects
-        Codebase codebase = extractDataToCodebase(REMOTE_URL, "ui-development-commit-history"); //method being tested
+        Codebase codebase = extractDataToCodebase(VALID_REMOTE_URL, "ui-development-commit-history"); //method being tested
 
         assertEquals(EXPECTED_BRANCH_SIZE, codebase.getActiveCommits().size());
     }
@@ -218,7 +220,7 @@ public class RepositoryAnalyzerTest {
         final String EXPECTED_EMAIL_OF_AUTHOR_10_2 = "fyffep";
 
         //Create test objects
-        Codebase codebase = extractDataToCodebase(REMOTE_URL, "development"); //method being tested
+        Codebase codebase = extractDataToCodebase(VALID_REMOTE_URL, "development"); //method being tested
 
         // Verify the results
         FileObject fileObject = codebase.getFileObjectFromFilename(TEST_FILE_NAME);
@@ -431,7 +433,7 @@ public class RepositoryAnalyzerTest {
         final String EXPECTED_EMAIL_OF_AUTHOR_8_3 = "ebehar@iu.edu";
 
         //Create test objects
-        Codebase codebase = extractDataToCodebase(REMOTE_URL, "development"); //method being tested
+        Codebase codebase = extractDataToCodebase(VALID_REMOTE_URL, "development"); //method being tested
 
         // Verify the results
         FileObject fileObject = codebase.getFileObjectFromFilename(TEST_FILE_NAME);
@@ -576,7 +578,7 @@ public class RepositoryAnalyzerTest {
         final String EXPECTED_EMAIL_OF_AUTHOR_3_2 = "ebehar@iu.edu";
 
         //Create test objects
-        Codebase codebase = extractDataToCodebase(REMOTE_URL, "view-model-communication"); //method being tested
+        Codebase codebase = extractDataToCodebase(VALID_REMOTE_URL, "view-model-communication"); //method being tested
 
         // Verify the results
         FileObject fileObject = codebase.getFileObjectFromFilename(TEST_FILE_NAME);

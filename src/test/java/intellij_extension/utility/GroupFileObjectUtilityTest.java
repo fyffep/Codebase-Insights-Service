@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class GroupFileObjectUtilityTest {
@@ -41,18 +42,22 @@ public class GroupFileObjectUtilityTest {
                 .anyMatch(fileObject -> fileObject.getFilename().equals("myfileA.java")));
         assertTrue(packageToFileMap.get("\\package1\\").stream()
                 .anyMatch(fileObject -> fileObject.getFilename().equals("myfileB.java")));
+        assertEquals(2, packageToFileMap.get("\\package1\\").size());
 
         assertTrue(packageToFileMap.containsKey("\\package3\\"));
         assertTrue(packageToFileMap.get("\\package3\\").stream()
                 .anyMatch(fileObject -> fileObject.getFilename().equals("myfileE.java")));
+        assertEquals(3, packageToFileMap.get("\\package3\\").size());
 
         assertTrue(packageToFileMap.containsKey("\\package3\\package4\\"));
         assertTrue(packageToFileMap.get("\\package3\\package4\\").stream()
                 .anyMatch(fileObject -> fileObject.getFilename().equals("myfileG.java")));
+        assertEquals(1, packageToFileMap.get("\\package3\\package4\\").size());
 
         assertTrue(packageToFileMap.containsKey("\\package5\\package6\\"));
         assertTrue(packageToFileMap.get("\\package5\\package6\\").stream()
                 .anyMatch(fileObject -> fileObject.getFilename().equals("myfileH.java")));
+        assertEquals(1, packageToFileMap.get("\\package5\\package6\\").size());
     }
 
     @Test
@@ -105,8 +110,17 @@ public class GroupFileObjectUtilityTest {
         TreeSet<FileObject> pair3 = new TreeSet<>(FILE_OBJECT_COMPARATOR);
 
         pair1.addAll(Set.of(fileObject1, fileObject4));
-        pair2.addAll(Set.of(fileObject2, fileObject3, fileObject6));
+        pair2.addAll(Set.of(fileObject2, fileObject6));
         pair3.addAll(Set.of(fileObject5));
+
+        for (Map.Entry<String, TreeSet<FileObject>> entry : packageToFileMap.entrySet())
+        {
+            System.out.println("key "+entry.getKey());
+            for (FileObject f : entry.getValue())
+            {
+                System.out.println(f.getFilename());
+            }
+        }
 
         assertTrue(packageToFileMap.containsValue(pair1));
         assertTrue(packageToFileMap.containsValue(pair2));

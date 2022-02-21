@@ -1,8 +1,8 @@
 package com.insightservice.springboot.utility.commit_history;
 
+import com.insightservice.springboot.exception.BadBranchException;
 import com.insightservice.springboot.exception.BadUrlException;
 import org.apache.tomcat.util.http.fileupload.FileUtils;
-import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
@@ -12,7 +12,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.Arrays;
 
 import static com.insightservice.springboot.Constants.*;
 
@@ -46,8 +45,9 @@ public class JGitHelper
 
     public static File cloneRepository(String remoteUrl, String branchName) throws GitAPIException, IOException
     {
-        //Make an empty dir for the cloned repo
+        //Make a dir for the cloned repo
         File directory = getPathOfLocalRepository(remoteUrl);
+        //TODO the repo shouldn't be deleted if it the branch being used is the same. Need to figure out how to check current branch & pull.
         if (directory.exists())
             FileUtils.deleteDirectory(directory);
         directory.mkdirs();
@@ -57,14 +57,14 @@ public class JGitHelper
         //Use default branch (master/main/etc)
         if (branchName.equals(USE_DEFAULT_BRANCH) || branchName.isBlank())
         {
+            LOG.info("No branch specified.");
             try (Git result = Git.cloneRepository()
                     //Note lack of setBranch(...) call
                     .setURI(remoteUrl)
                     .setDirectory(directory)
                     .call()) {
-                //TODO test with repos where only main or development exists
             }
-            catch (Exception ex)
+            catch (Exception ex) //handles private and non-existent repos
             {
                 throw new BadUrlException("No repository could be read from your GitHub URL.");
             }
@@ -72,19 +72,25 @@ public class JGitHelper
         //Else, choose specific branch
         else
         {
+            LOG.info("Using branch " + branchName);
             try (Git result = Git.cloneRepository()
                     .setBranch(branchName)
                     .setURI(remoteUrl)
                     .setDirectory(directory)
                     .call()) {
             }
-            catch (Exception ex)
+            catch (Exception ex) //handles private and non-existent repos
             {
                 throw new BadUrlException("No repository could be read from your GitHub URL.");
             }
         }
 
-
+        //Ensure files were cloned successfully
+        File pathToRepo = JGitHelper.getPathOfLocalRepository(remoteUrl);
+        if (!pathToRepo.exists() || pathToRepo.list() == null)
+            throw new BadUrlException("Cloning your repository failed for an unknown reason.");
+        if (pathToRepo.list().length < 2) //if only the .git folder exists
+            throw new BadBranchException("The branch cloned was empty.");
 
         return directory;
     }
