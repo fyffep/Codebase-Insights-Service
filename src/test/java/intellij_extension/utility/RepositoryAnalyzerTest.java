@@ -53,7 +53,7 @@ public class RepositoryAnalyzerTest {
             throw e;
         }
         finally
-        {
+        { 
             //Close the .git files
             if (repositoryAnalyzer != null)
                 repositoryAnalyzer.cleanup();
