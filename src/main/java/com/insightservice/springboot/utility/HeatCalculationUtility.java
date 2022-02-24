@@ -8,7 +8,7 @@ import com.insightservice.springboot.model.codebase.HeatObject;
 import java.awt.*;
 import java.util.*;
 
-import static com.insightservice.springboot.Constants.LOG;
+import static com.insightservice.springboot.Constants.*;
 
 /**
  * Modifies the Codebase so that every HeatObject within it is given a heat level
@@ -23,38 +23,38 @@ public class HeatCalculationUtility
     }
 
 
-    /**
-     * Converts the input heat level to a color.
-     * Higher heat levels are indicated by higher intensities of red.
-     * @param heatLevel a number from 1 to 10
-     * @return a Color between blue (for 1) and red (for 10)
-     */
-    public static Color colorOfHeat(int heatLevel) {
-        // Get percentage
-        float heatPercentage = heatLevel / ((float) Constants.HEAT_MAX);
+//    /**
+//     * Converts the input heat level to a color.
+//     * Higher heat levels are indicated by higher intensities of red.
+//     * @param heatLevel a number from 1 to 10
+//     * @return a Color between blue (for 1) and red (for 10)
+//     */
+//    public static Color colorOfHeat(int heatLevel) {
+//        // Get percentage
+//        float heatPercentage = heatLevel / ((float) Constants.HEAT_MAX);
+//
+//        // Get color based on percentage 0 = completely BLUE 1 = Completely RED
+//        //Color heatColor = Constants.HEAT_MIN_COLOR.interpolate(Constants.HEAT_MAX_COLOR, heatPercentage);
+//        Color heatColor = Constants.HEAT_MIN_COLOR; //FIXME. interpolate is a JavaFX method.
+//
+//        return heatColor;
+//    }
 
-        // Get color based on percentage 0 = completely BLUE 1 = Completely RED
-        //Color heatColor = Constants.HEAT_MIN_COLOR.interpolate(Constants.HEAT_MAX_COLOR, heatPercentage);
-        Color heatColor = Constants.HEAT_MIN_COLOR; //FIXME. interpolate is a JavaFX method.
 
-        return heatColor;
-    }
-
-
-    /**
-     * Converts the input heat level to a color.
-     * Higher heat levels are indicated by higher intensities of red.
-     * @param heatLevel a number from 1 to 10
-     * @return a hexadecimal String of the form "FFFFFF" representing a color
-     */
-    public static String colorOfHeatAsHex(int heatLevel) {
-        //Convert heat level to Color
-        Color fileHeatColor = colorOfHeat(heatLevel);
-
-        //Convert Color to hex
-        String colorString = fileHeatColor.toString();
-        return colorString.substring(colorString.indexOf("x") + 1);
-    }
+//    /**
+//     * Converts the input heat level to a color.
+//     * Higher heat levels are indicated by higher intensities of red.
+//     * @param heatLevel a number from 1 to 10
+//     * @return a hexadecimal String of the form "FFFFFF" representing a color
+//     */
+//    public static String colorOfHeatAsHex(int heatLevel) {
+//        //Convert heat level to Color
+//        Color fileHeatColor = colorOfHeat(heatLevel);
+//
+//        //Convert Color to hex
+//        String colorString = fileHeatColor.toString();
+//        return colorString.substring(colorString.indexOf("x") + 1);
+//    }
 
 
 
@@ -83,7 +83,7 @@ public class HeatCalculationUtility
                 if (lastHeatObject != null)
                 {
                     //Compute the heat based on how much the size has changed over time
-                    int accumulatedHeatLevel = lastHeatObject.getHeatLevel(); //use previous heat, then modify
+                    int accumulatedHeatLevel = lastHeatObject.getFileSizeHeat(); //use previous heat, then modify
 
                     //If the file size increased at all, incur 2 heat
                     long oldFileSize = lastHeatObject.getFileSize();
@@ -129,7 +129,7 @@ public class HeatCalculationUtility
                             computeLineCountHeat(newerHeatObject.getLineCount()));
 
                     //Store the heat
-                    newerHeatObject.setHeatLevel((int) Math.round( heatLevel ));
+                    newerHeatObject.setFileSizeHeat((int) Math.round( heatLevel ));
                 }
                 else
                 {
@@ -140,7 +140,7 @@ public class HeatCalculationUtility
                             computeLineCountHeat(newerHeatObject.getLineCount()));
 
                     //Store the heat
-                    newerHeatObject.setHeatLevel((int) Math.round( heatLevel ));
+                    newerHeatObject.setFileSizeHeat((int) Math.round( heatLevel ));
                 }
 //if (fileObject.getFilename().equals("HeatMapPane.java"))
 //System.out.println("Heat: "+newerHeatObject.getHeatLevel()+"\n");
@@ -242,7 +242,7 @@ public class HeatCalculationUtility
                 HeatObject newerHeatObject = commitToHeatObjectEntry.getValue();
                 if (lastHeatObject != null)
                 {
-                    newerHeatObject.setHeatLevel(lastHeatObject.getHeatLevel()); //use previous heat, then modify
+                    newerHeatObject.setNumberOfCommitsHeat(lastHeatObject.getNumberOfCommitsHeat()); //use previous heat, then modify
 
 /*if (fileObject.getFilename().equals("HeatMapPane.java"))
 {
@@ -254,7 +254,7 @@ public class HeatCalculationUtility
                     //If the file was committed to, incur heat
                     if (newerHeatObject.getNumberOfCommits() > lastHeatObject.getNumberOfCommits())
                     {
-                        newerHeatObject.setHeatLevel(newerHeatObject.getHeatLevel() + COMMIT_HEAT_CONSEQUENCE);
+                        newerHeatObject.setNumberOfCommitsHeat(newerHeatObject.getNumberOfCommitsHeat() + COMMIT_HEAT_CONSEQUENCE);
                         numberOfConsecutiveCommitsWithNoModify = 0;
                     }
                     //File was not touched in the commit ↓
@@ -265,14 +265,14 @@ public class HeatCalculationUtility
                         //If file went unchanged for long enough, the heat improved
                         if (numberOfConsecutiveCommitsWithNoModify >= REQUIRED_NUM_COMMITS_WITHOUT_CHANGING)
                         {
-                            newerHeatObject.setHeatLevel(newerHeatObject.getHeatLevel() + COMMIT_ABSENCE_HEAT_CONSEQUENCE);
+                            newerHeatObject.setNumberOfCommitsHeat(newerHeatObject.getNumberOfCommitsHeat() + COMMIT_ABSENCE_HEAT_CONSEQUENCE);
                             numberOfConsecutiveCommitsWithNoModify = 0;
                         }
                     }
                 }
                 else
                 {
-                    newerHeatObject.setHeatLevel(Constants.HEAT_MIN); //No commits to the file yet
+                    newerHeatObject.setNumberOfCommitsHeat(Constants.HEAT_MIN); //No commits to the file yet
                 }
 //if (fileObject.getFilename().equals("HeatMapPane.java"))
                 //System.out.println("Heat: "+newerHeatObject.getHeatLevel()+"\n");
@@ -385,7 +385,7 @@ public class HeatCalculationUtility
                 //Store the new heat level
                 //lastHeatBeforeTransformation = heatLevel;
                 int heatLevel = activeAuthorsToHeatLevel(numberOfActiveAuthors, totalAuthorCount);
-                newerHeatObject.setHeatLevel(heatLevel);
+                newerHeatObject.setNumberOfAuthorsHeat(heatLevel);
 //System.out.println("Heat level: "+heatLevel);
                 lastHeatObject = newerHeatObject;
             }
@@ -435,24 +435,17 @@ public class HeatCalculationUtility
     private static void assignHeatLevelsOverall(Codebase codebase)
     {
         LOG.info("Calculating overall heat...");
-        final float WEIGHT_FILE_SIZE = 0.2f;
-        final float WEIGHT_NUM_COMMITS_NUM_OF_COMMITS = 0.4f;
-        final float WEIGHT_NUM_OF_AUTHORS = 0.4f;
         /**
          * Create a map that records the sum of all heat levels from every metric.
          * After every call to an assignHeatLevels method, we must call sumHeatLevels(...) to record
          * the latest heat levels in this map.
          */
-        HashMap<FileObject, HashMap<String, Float>> fileToCommitToHeatSumMap = new HashMap<>();
 
-        assignHeatLevelsFileSize(codebase);
-        sumHeatLevels(codebase, fileToCommitToHeatSumMap, WEIGHT_FILE_SIZE);
+        //assignHeatLevelsFileSize(codebase); //REMOVED until further notice
 
         assignHeatLevelsNumberOfCommits(codebase);
-        sumHeatLevels(codebase, fileToCommitToHeatSumMap, WEIGHT_NUM_COMMITS_NUM_OF_COMMITS);
 
         assignHeatLevelsNumberOfAuthors(codebase);
-        sumHeatLevels(codebase, fileToCommitToHeatSumMap, WEIGHT_NUM_OF_AUTHORS);
 
         //Add more metrics here if more are needed in the future...
 
@@ -460,65 +453,47 @@ public class HeatCalculationUtility
         Set<FileObject> fileObjectSet = codebase.getActiveFileObjects();
         for (FileObject fileObject : fileObjectSet)
         {
-            HashMap<String, Float> commitToHeatSumMap = fileToCommitToHeatSumMap.get(fileObject);
-
             LinkedHashMap<String, HeatObject> commitHashToHeatObjectMap = fileObject.getCommitHashToHeatObjectMap();
             for (Map.Entry<String, HeatObject> commitToHeatObjectEntry : commitHashToHeatObjectMap.entrySet())
             {
-                //Retrieve heat sum
-                String commitHash = commitToHeatObjectEntry.getKey();
-                int heatSum = Math.round(commitToHeatSumMap.get(commitHash));
-
-                //Store result in the HeatObject
-                commitToHeatObjectEntry.getValue().setHeatLevel(heatSum);
+                //Calculate weighted sum of heat
+                HeatObject heatObject = commitToHeatObjectEntry.getValue();
+                heatObject.setOverallHeat(
+                        (heatObject.getFileSizeHeat() * WEIGHT_FILE_SIZE) +
+                        (heatObject.getNumberOfCommitsHeat() * WEIGHT_NUM_OF_COMMITS) +
+                        (heatObject.getNumberOfAuthorsHeat() * WEIGHT_NUM_OF_AUTHORS) +
+                        (heatObject.getDegreeOfCouplingHeat() * WEIGHT_DEGREE_OF_COUPLING) +
+                        (heatObject.getGoodBadCommitRatioHeat() * WEIGHT_COMMIT_RATIO)
+                );
             }
         }
         LOG.info("Finished calculating overall heat.");
     }
 
-    /**
-     * Helper method for assignHeatLevelsOverall that adds the heat levels from every HeatObject to the float
-     * part of the given fileToCommitToHeatSumMap. That way, the HeatObjects can have their heatLevels recalculated
-     * by other assignHeat methods.
-     */
-    private static void sumHeatLevels(Codebase codebase, HashMap<FileObject, HashMap<String, Float>> fileToCommitToHeatSumMap, float weight)
-    {
-        Set<FileObject> fileObjectSet = codebase.getActiveFileObjects();
-        for (FileObject fileObject : fileObjectSet)
-        {
-            //Get or create map of commit hash to heat sum
-            HashMap<String, Float> commitToHeatSumMap = fileToCommitToHeatSumMap.computeIfAbsent(fileObject, k -> new HashMap<>());
+    //DEPRECATED--it's now better to assign all heat at once
+//    public static void assignHeatLevels(Codebase codebase, Constants.HeatMetricOptions heatMetricOption)
+//    {
+//        switch (heatMetricOption)
+//        {
+//            case OVERALL:
+//                assignHeatLevelsOverall(codebase);
+//                break;
+//            case FILE_SIZE:
+//                assignHeatLevelsFileSize(codebase);
+//                break;
+//            case NUM_OF_COMMITS:
+//                assignHeatLevelsNumberOfCommits(codebase);
+//                break;
+//            case NUM_OF_AUTHORS:
+//                assignHeatLevelsNumberOfAuthors(codebase);
+//                break;
+//            default:
+//                throw new UnsupportedOperationException("Invalid heat metric selected in HeatCalculationUtility.assignHeatLevels(...)");
+//        }
+//    }
 
-            //Add the latest heatLevel to the heat sum, then store the sum in the commitToHeatSumMap
-            LinkedHashMap<String, HeatObject> commitHashToHeatObjectMap = fileObject.getCommitHashToHeatObjectMap();
-            for (Map.Entry<String, HeatObject> commitToHeatObjectEntry : commitHashToHeatObjectMap.entrySet())
-            {
-                int heatLevel = commitToHeatObjectEntry.getValue().getHeatLevel();
-                float weightedHeat = heatLevel * weight;
-                String commitHash = commitToHeatObjectEntry.getKey();
-                commitToHeatSumMap.merge(commitHash, weightedHeat, Float::sum);
-            }
-        }
-    }
-
-    public static void assignHeatLevels(Codebase codebase, Constants.HeatMetricOptions heatMetricOption)
+    public static void assignHeatLevels(Codebase codebase)
     {
-        switch (heatMetricOption)
-        {
-            case OVERALL:
-                assignHeatLevelsOverall(codebase);
-                break;
-            case FILE_SIZE:
-                assignHeatLevelsFileSize(codebase);
-                break;
-            case NUM_OF_COMMITS:
-                assignHeatLevelsNumberOfCommits(codebase);
-                break;
-            case NUM_OF_AUTHORS:
-                assignHeatLevelsNumberOfAuthors(codebase);
-                break;
-            default:
-                throw new UnsupportedOperationException("Invalid heat metric selected in HeatCalculationUtility.assignHeatLevels(...)");
-        }
+        assignHeatLevelsOverall(codebase);
     }
 }

@@ -29,7 +29,7 @@ public class Codebase implements CodeBaseObservable {
     private String latestCommitHash;
     private String targetCommit;
     private GroupingMode currentGroupingMode = GroupingMode.PACKAGES;
-    private HeatMetricOptions currentHeatMetricOption = HeatMetricOptions.OVERALL;
+    private HeatMetricOptions currentHeatMetricOption = HeatMetricOptions.OVERALL; //TODO remove
     // endregion
 
     // region Constructor
@@ -257,7 +257,7 @@ public class Codebase implements CodeBaseObservable {
         System.out.println("groupDataByCommits called");
 
         // Calculate heat based on the selected metric
-        HeatCalculationUtility.assignHeatLevels(this, currentHeatMetricOption);
+        HeatCalculationUtility.assignHeatLevels(this);
 
         //Group by commit
         return GroupFileObjectUtility.groupByCommit(this);
@@ -267,7 +267,7 @@ public class Codebase implements CodeBaseObservable {
         System.out.println("groupDataByPackages called");
 
         // Calculate heat based on the selected metric
-        HeatCalculationUtility.assignHeatLevels(this, currentHeatMetricOption);
+        HeatCalculationUtility.assignHeatLevels(this);
 
         //Group by package
         return GroupFileObjectUtility.groupByPackage(getProjectRootPath(), activeFileObjects);
