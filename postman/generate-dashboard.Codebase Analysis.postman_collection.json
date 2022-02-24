@@ -1,0 +1,114 @@
+{
+	"info": {
+		"_postman_id": "461bd22f-5f0d-4c12-9350-7c77609c25bd",
+		"name": "Codebase Analysis",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Clone Remote Repo",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"githubUrl\": {{reposToAnalyze}}\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{hostUrl}}/api/analyze/codebase",
+					"host": [
+						"{{hostUrl}}"
+					],
+					"path": [
+						"api",
+						"analyze",
+						"codebase"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "(Temporary) Create user",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\": \"username10\",\r\n    \"password\": \"password10\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{hostUrl}}/api/data/create/",
+					"host": [
+						"{{hostUrl}}"
+					],
+					"path": [
+						"api",
+						"data",
+						"create",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "(Temp) Get all users",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{hostUrl}}/api/data/all/",
+					"host": [
+						"{{hostUrl}}"
+					],
+					"path": [
+						"api",
+						"data",
+						"all",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Compute Dashboard",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"githubUrl\": \"{{reposToAnalyze}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{hostUrl}}/api/analyze/codebase",
+					"host": [
+						"{{hostUrl}}"
+					],
+					"path": [
+						"api",
+						"analyze",
+						"codebase"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
