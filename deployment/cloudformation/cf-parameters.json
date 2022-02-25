@@ -1,0 +1,50 @@
+[
+  {
+    "ParameterKey": "AMIImageId",
+    "ParameterValue": "ami-0ca89eae5c282b402"
+  },
+  {
+    "ParameterKey": "AppRole",
+    "ParameterValue": "insights-service"
+  },
+  {
+    "ParameterKey": "DesiredCapacity",
+    "ParameterValue": "1"
+  },
+  {
+    "ParameterKey": "AvailabilityZones",
+    "ParameterValue": "us-east-1a,us-east-1b,us-east-1c,us-east-1d,us-east-1e,us-east-1f"
+  },
+  {
+    "ParameterKey": "DockerImageTag",
+    "ParameterValue": "1"
+  },
+  {
+    "ParameterKey": "ECSClusterName",
+    "ParameterValue": "ci-service"
+  },
+  {
+    "ParameterKey": "InstanceType",
+    "ParameterValue": "t3.micro"
+  },
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "ops"
+  },
+  {
+    "ParameterKey": "VPCCidrBlock",
+    "ParameterValue": "10.0.0.0/24"
+  },
+  {
+    "ParameterKey": "VpcId",
+    "ParameterValue": "vpc-0a1e95d192d0545dc"
+  },
+  {
+    "ParameterKey": "VPCPrivateSubnets",
+    "ParameterValue": "subnet-01bfd3db69a101ef2"
+  },
+  {
+    "ParameterKey": "SubnetId",
+    "ParameterValue": "subnet-01d444728e822b04d,subnet-0b01649d0b09dcedc,subnet-0f3c54592b6cf4394,subnet-0e4e2a3ea8192ff23,subnet-0e5860c200b0d2c2c,subnet-06846777ef651a2fb"
+  }
+]

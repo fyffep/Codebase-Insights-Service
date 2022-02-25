@@ -1,4 +1,4 @@
-FROM openjdk:11
+FROM --platform=linux/x86_64 openjdk:11
 ARG JAR_FILE=target/codebase-insights-service-1.0-SNAPSHOT.jar
 COPY ${JAR_FILE} service.jar
 EXPOSE 8080

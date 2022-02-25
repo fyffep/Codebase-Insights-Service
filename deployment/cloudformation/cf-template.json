@@ -1,0 +1,900 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Deploys Codebase Insights Service docker containers using ECS Cluster with ELB & Auto Scaling Group.",
+  "Mappings": {},
+  "Parameters": {
+    "AMIImageId": {
+      "ConstraintDescription": "You must provide Here AMI.",
+      "Default": "ami-0ca89eae5c282b402",
+      "Description": "Here AMI to use for EC2 instances. Provide latest Here AMI and it should not be older than 3 months.",
+      "Type": "AWS::EC2::Image::Id"
+    },
+    "AppRole": {
+      "Description": "Application Role",
+      "Type": "String",
+      "Default": "insights-service"
+    },
+    "AutoScalingDesiredCapacity": {
+      "ConstraintDescription": "You must set autoscaling desired capacity.",
+      "Default": "0",
+      "Description": "Auto Scaling Group desired capacity. This is the number of instances created by ASG. This value should be between min andmax capacity.",
+      "Type": "Number"
+    },
+    "AvailabilityZones": {
+      "ConstraintDescription": "You must choose one or more AZs.",
+      "Default": "us-east-1e",
+      "Description": "Choose one or more AZ in the list. ASG will use to create ec2 instances in these AZs. Example: us-east-1a,us-east-1b",
+      "Type": "List<AWS::EC2::AvailabilityZone::Name>"
+    },
+    "ContainerPort": {
+      "Type": "String",
+      "Description": "The container port to forward requests to.",
+      "MinLength": "1",
+      "Default": "8080"
+    },
+    "DockerImageTag": {
+      "Type": "String",
+      "Description": "Docker image tag to be installed from the ECS repository.",
+      "MinLength": "1"
+    },
+    "ECSClusterName": {
+      "ConstraintDescription": "You must specify cluster name",
+      "Type": "String"
+    },
+    "EcsRepoUrl": {
+      "Type": "String",
+      "Description": "URI of the existing ECS repository containing the Docker image to be deployed.",
+      "MinLength": "1",
+      "Default": "099942544481.dkr.ecr.us-east-1.amazonaws.com/codebase-insights:latest"
+    },
+    "HealthCheckPath": {
+      "Type": "String",
+      "Description": "HTTP endpoint path which the ELB will use to check application health.",
+      "MinLength": "1",
+      "Default": "/"
+    },
+    "InstanceType": {
+      "Default": "t3.micro",
+      "Description": "EC2 Instance type - eg t1.micro, m1.large",
+      "Type": "String"
+    },
+    "KeyName": {
+      "ConstraintDescription": "You must choose key pair name otherwise you can't ssh to the ec2 instance.",
+      "Default": "ops",
+      "Description": "Name of an existing Amazon EC2 public/private key pair to enable remote access to instances. You will use this key to ssh to the host.",
+      "Type": "AWS::EC2::KeyPair::KeyName"
+    },
+    "VPCCidrBlock": {
+      "AllowedPattern": "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/([0-9]|[1-2][0-9]|3[0-2]))$",
+      "ConstraintDescription": "You must provide VPC CIDR",
+      "Default": "10.122.156.0/22",
+      "Description": "Provide VPC CIDR here. It should be in the format xxx.xxx.xxx.xxx/xx",
+      "Type": "String"
+    },
+    "VPCId": {
+      "ConstraintDescription": "You must choose VPC",
+      "Description": "Choose VPC where you want to create resources with this template.",
+      "Type": "AWS::EC2::VPC::Id"
+    },
+    "VPCPrivateSubnets": {
+      "ConstraintDescription": "You must choose one or more private subnets.",
+      "Description": "Choose all private subnets created in the selected VPC. Auto Scaling Group will use to create ec2 instances.",
+      "Type": "List<AWS::EC2::Subnet::Id>"
+    },
+    "VPCPublicSubnets": {
+      "Description": "Choose all public subnets created in the selected VPC. ELB will be created in these subnets. Min 8 IP must be free in eash subnet in case of internal ELB. If you are not creating ELB then no need to choose public subnets.",
+      "Type": "List<AWS::EC2::Subnet::Id>"
+    }
+  },
+  "Resources": {
+    "ASGLaunchConfig": {
+      "DependsOn": "InstanceProfile",
+      "Properties": {
+        "BlockDeviceMappings": [],
+        "IamInstanceProfile": {
+          "Ref": "InstanceProfile"
+        },
+        "ImageId": {
+          "Ref": "AMIImageId"
+        },
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "HaloEC2SG"
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#!/bin/bash",
+                "\n",
+                "sudo yum -y install sysstat",
+                "\n",
+                "sudo echo \"# Run system activity accounting tool every 5 minutes\" > /etc/cron.d/sysstat",
+                "\n",
+                "sudo echo \"*/5 * * * * root /usr/lib64/sa/sa1 1 1\" >> /etc/cron.d/sysstat",
+                "\n",
+                "sudo echo \"# Generate a daily summary of process accounting at 23:53\" >> /etc/cron.d/sysstat",
+                "\n",
+                "sudo echo \"53 23 * * * root /usr/lib64/sa/sa2 -A\" >> /etc/cron.d/sysstat",
+                "\n",
+                "sudo /etc/init.d/sysstat start",
+                "\n",
+                "sudo yum -y install ecs-init",
+                "\n",
+                "sudo service docker start",
+                "\n",
+                "sudo mkdir -p /etc/ecs",
+                "\n",
+                "sudo cat << EOF >> /etc/ecs/ecs.config",
+                "\n",
+                "ECS_POLL_METRICS=true",
+                "\n",
+                "ECS_DATADIR=/data",
+                "\n",
+                "ECS_ENABLE_TASK_IAM_ROLE=true",
+                "\n",
+                "ECS_ENABLE_TASK_IAM_ROLE_NETWORK_HOST=true",
+                "\n",
+                "ECS_LOGFILE=/log/ecs-agent.log",
+                "\n",
+                "ECS_AVAILABLE_LOGGING_DRIVERS=[\"json-file\",\"awslogs\",\"splunk\"]",
+                "\n",
+                "ECS_LOGLEVEL=info",
+                "\n",
+                "ECS_CLUSTER=",
+                {
+                  "Ref": "ECSClusterName"
+                },
+                "\n",
+                "EOF",
+                "\nsudo start ecs",
+                "\n",
+                "yum update --security -y",
+                "\n",
+                "export AWS_REGION=",
+                {
+                  "Ref": "AWS::Region"
+                },
+                "\n"
+              ]
+            ]
+          }
+        }
+      },
+      "Type": "AWS::AutoScaling::LaunchConfiguration"
+    },
+    "HaloEC2Role": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sts:AssumeRole"
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.amazonaws.com",
+                  "s3.amazonaws.com",
+                  "autoscaling.amazonaws.com"
+                ]
+              }
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
+                    "s3:Get*",
+                    "s3:List*",
+                    "s3:Put*",
+                    "cloudwatch:PutMetricAlarm",
+                    "cloudwatch:GetMetricData",
+                    "iam:PassRole",
+                    "sts:AssumeRole"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*"
+                }
+              ]
+            },
+            "PolicyName": "CloudWatchStackPolicy"
+          },
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
+                    "s3:Get*",
+                    "s3:List*",
+                    "s3:CreateMultipartUpload",
+                    "s3:putObject"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*"
+                }
+              ]
+            },
+            "PolicyName": "S3StackPolicy"
+          },
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
+                    "cloudformation:DescribeStacks",
+                    "cloudformation:DescribeStackResource",
+                    "cloudformation:DescribeStackResources",
+                    "cloudformation:CreateStack",
+                    "cloudwatch:PutMetricData",
+                    "cloudwatch:GetMetricData",
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:DescribeLogGroups",
+                    "logs:DescribeLogStreams",
+                    "logs:PutLogEvents"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*"
+                }
+              ]
+            },
+            "PolicyName": "CoudFormationStackPolicy"
+          },
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
+                    "ec2:Describe*",
+                    "ec2:CreateTags",
+                    "ec2:CreateNetworkInterface",
+                    "sts:AssumeRole",
+                    "elasticloadbalancing:DescribeLoadBalancers"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*"
+                }
+              ]
+            },
+            "PolicyName": "EC2StackPolicy"
+          },
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
+                    "autoscaling:Describe*",
+                    "autoscaling:PutNotificationConfiguration"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*"
+                }
+              ]
+            },
+            "PolicyName": "AutoscalingStackPolicy"
+          },
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
+                    "ecs:RegisterContainerInstance",
+                    "ecs:DiscoverPollEndpoint",
+                    "ecs:DiscoverPollEndpoint",
+                    "ecs:Submit*",
+                    "ecs:Poll",
+                    "ecs:StartTelemetrySession",
+                    "ecr:GetAuthorizationToken",
+                    "ecs:Describe*",
+                    "ecr:GetDownloadUrlForLayer",
+                    "ecr:BatchGetImage"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*"
+                }
+              ]
+            },
+            "PolicyName": "ECSStackPolicy"
+          },
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                    "logs:CreateLogGroup"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*"
+                }
+              ]
+            },
+            "PolicyName": "LogsPolicy"
+          },
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
+                    "elasticfilesystem:DescribeMountTargets",
+                    "elasticfilesystem:CreateMountTarget"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*"
+                }
+              ]
+            },
+            "PolicyName": "EFSPolicy"
+          },
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
+                    "elasticache:Describe*"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*"
+                }
+              ]
+            },
+            "PolicyName": "ElasticachePolicy"
+          }
+        ],
+        "RoleName": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "ECSClusterName"
+              }
+            ]
+          ]
+        }
+      },
+      "Type": "AWS::IAM::Role"
+    },
+    "HaloEC2SG": {
+      "Properties": {
+        "GroupDescription": "Halo ec2 security group for ECS cluster",
+        "GroupName": "ci-service-sg",
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": {
+              "Ref": "VPCCidrBlock"
+            },
+            "FromPort": "0",
+            "IpProtocol": "-1",
+            "ToPort": "0"
+          },
+          {
+            "CidrIp": "10.0.0.0/8",
+            "FromPort": "22",
+            "IpProtocol": "tcp",
+            "ToPort": "22"
+          },
+          {
+            "CidrIp": "10.0.0.0/8",
+            "FromPort": "8080",
+            "IpProtocol": "tcp",
+            "ToPort": "8080"
+          },
+          {
+            "CidrIp": "10.0.0.0/8",
+            "FromPort": "8443",
+            "IpProtocol": "tcp",
+            "ToPort": "8443"
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": "9000",
+            "IpProtocol": "tcp",
+            "ToPort": "9000"
+          },
+          {
+            "CidrIp": "10.0.0.0/8",
+            "FromPort": "8311",
+            "IpProtocol": "tcp",
+            "ToPort": "8311"
+          },
+          {
+            "CidrIp": "10.0.0.0/8",
+            "FromPort": "18311",
+            "IpProtocol": "tcp",
+            "ToPort": "18311"
+          },
+          {
+            "CidrIp": "10.0.0.0/8",
+            "FromPort": "5672",
+            "IpProtocol": "tcp",
+            "ToPort": "5672"
+          },
+          {
+            "CidrIp": "10.0.0.0/8",
+            "FromPort": "15672",
+            "IpProtocol": "tcp",
+            "ToPort": "15672"
+          },
+          {
+            "CidrIp": "10.0.0.0/8",
+            "FromPort": "27017",
+            "IpProtocol": "tcp",
+            "ToPort": "27017"
+          },
+          {
+            "CidrIp": "10.0.0.0/8",
+            "FromPort": "5666",
+            "IpProtocol": "tcp",
+            "ToPort": "5666"
+          },
+          {
+            "CidrIp": "10.0.0.0/8",
+            "FromPort": "1099",
+            "IpProtocol": "tcp",
+            "ToPort": "1099"
+          },
+          {
+            "CidrIp": "10.0.0.0/8",
+            "FromPort": "2222",
+            "IpProtocol": "tcp",
+            "ToPort": "2222"
+          },
+          {
+            "CidrIp": "10.0.0.0/8",
+            "FromPort": "8500",
+            "IpProtocol": "tcp",
+            "ToPort": "8500"
+          },
+          {
+            "CidrIp": "10.0.0.0/8",
+            "FromPort": "9950",
+            "IpProtocol": "tcp",
+            "ToPort": "9950"
+          },
+          {
+            "CidrIp": "10.0.0.0/8",
+            "FromPort": "2551",
+            "IpProtocol": "tcp",
+            "ToPort": "2551"
+          },
+          {
+            "CidrIp": "10.0.0.0/8",
+            "FromPort": "2551",
+            "IpProtocol": "udp",
+            "ToPort": "2551"
+          },
+          {
+            "CidrIp": "10.0.0.0/8",
+            "FromPort": "8190",
+            "IpProtocol": "tcp",
+            "ToPort": "8190"
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": "80",
+            "IpProtocol": "tcp",
+            "ToPort": "80"
+          },
+          {
+            "CidrIp": "10.0.0.0/8",
+            "FromPort": "443",
+            "IpProtocol": "tcp",
+            "ToPort": "443"
+          },
+          {
+            "CidrIp": "10.0.0.0/8",
+            "FromPort": "9998",
+            "IpProtocol": "tcp",
+            "ToPort": "9998"
+          },
+          {
+            "CidrIp": "10.0.0.0/8",
+            "FromPort": "32768",
+            "IpProtocol": "tcp",
+            "ToPort": "32768"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "ci-service-sg"
+          }
+        ],
+        "VpcId": {
+          "Ref": "VPCId"
+        }
+      },
+      "Type": "AWS::EC2::SecurityGroup"
+    },
+    "HaloECSCluster": {
+      "Properties": {
+        "ClusterName": {
+          "Ref": "ECSClusterName"
+        }
+      },
+      "Type": "AWS::ECS::Cluster"
+    },
+    "InstanceProfile": {
+      "Properties": {
+        "InstanceProfileName": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "ECSClusterName"
+              }
+            ]
+          ]
+        },
+        "Path": "/",
+        "Roles": [
+          {
+            "Ref": "HaloEC2Role"
+          }
+        ]
+      },
+      "Type": "AWS::IAM::InstanceProfile"
+    },
+    "LoadBalancerIngress": {
+      "Properties": {
+        "FromPort": "32768",
+        "GroupId": {
+          "Ref": "HaloEC2SG"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "HaloEC2SG"
+        },
+        "ToPort": "65535"
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "EcsSecurityGroupJMXTcpinbound": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "HaloEC2SG"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "9998",
+        "ToPort": "9998",
+        "CidrIp": "10.0.0.0/8"
+      }
+    },
+    "asg": {
+      "Properties": {
+        "AvailabilityZones": {
+          "Ref": "AvailabilityZones"
+        },
+        "Cooldown": "1",
+        "DesiredCapacity": {
+          "Ref": "AutoScalingDesiredCapacity"
+        },
+        "HealthCheckGracePeriod": 1800,
+        "HealthCheckType": "EC2",
+        "LaunchConfigurationName": {
+          "Ref": "ASGLaunchConfig"
+        },
+        "MaxSize": 500,
+        "MetricsCollection": [
+          {
+            "Granularity": "1Minute",
+            "Metrics": [
+              "GroupDesiredCapacity",
+              "GroupTotalInstances"
+            ]
+          }
+        ],
+        "MinSize": 1,
+        "Tags": [
+          {
+            "Key": "Name",
+            "PropagateAtLaunch": true,
+            "Value": {
+              "Ref": "ECSClusterName"
+            }
+          },
+          {
+            "Key": "spot-enabled",
+            "PropagateAtLaunch": true,
+            "Value": "false"
+          }
+        ],
+        "VPCZoneIdentifier": {
+          "Ref": "VPCPublicSubnets"
+        }
+      },
+      "Type": "AWS::AutoScaling::AutoScalingGroup"
+    },
+    "CloudWatchLogsGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Join": [
+            "-",
+            [
+              "ECSLogGroup-",
+              {
+                "Ref": "AWS::StackName"
+              }
+            ]
+          ]
+        },
+        "RetentionInDays": 14
+      }
+    },
+    "LoadBalancer": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "ci-service",
+              "-lb"
+            ]
+          ]
+        },
+        "Scheme": "internet-facing",
+        "LoadBalancerAttributes": [
+          {
+            "Key": "idle_timeout.timeout_seconds",
+            "Value": "30"
+          }
+        ],
+        "Subnets": {
+          "Ref": "VPCPublicSubnets"
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "HaloEC2SG"
+          }
+        ]
+      }
+    },
+    "LoadBalancerTargetGroup": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "DependsOn": "LoadBalancer",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPCId"
+        },
+        "HealthCheckIntervalSeconds": 60,
+        "HealthCheckPath": {
+          "Ref": "HealthCheckPath"
+        },
+        "HealthCheckProtocol": "HTTP",
+        "HealthCheckTimeoutSeconds": 5,
+        "HealthyThresholdCount": 2,
+        "UnhealthyThresholdCount": 2,
+        "Port": 32768,
+        "Protocol": "HTTP"
+      }
+    },
+    "LoadBalancerListener": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "DependsOn": "EcsServiceRole",
+      "Properties": {
+        "LoadBalancerArn": {
+          "Ref": "LoadBalancer"
+        },
+        "Port": "80",
+        "Protocol": "HTTP",
+        "DefaultActions": [
+          {
+            "Type": "forward",
+            "TargetGroupArn": {
+              "Ref": "LoadBalancerTargetGroup"
+            }
+          }
+        ]
+      }
+    },
+    "LoadBalancerListenerRule": {
+      "Type": "AWS::ElasticLoadBalancingV2::ListenerRule",
+      "DependsOn": "LoadBalancerListener",
+      "Properties": {
+        "ListenerArn": {
+          "Ref": "LoadBalancerListener"
+        },
+        "Priority": 1,
+        "Actions": [
+          {
+            "Type": "forward",
+            "TargetGroupArn": {
+              "Ref": "LoadBalancerTargetGroup"
+            }
+          }
+        ],
+        "Conditions": [
+          {
+            "Field": "path-pattern",
+            "Values": [
+              "*"
+            ]
+          }
+        ]
+      }
+    },
+    "EcsService": {
+      "Type": "AWS::ECS::Service",
+      "DependsOn": "LoadBalancerListener",
+      "Properties": {
+        "Cluster": {
+          "Ref": "HaloECSCluster"
+        },
+        "DesiredCount": {
+          "Ref": "AutoScalingDesiredCapacity"
+        },
+        "Role": {
+          "Ref": "EcsServiceRole"
+        },
+        "TaskDefinition": {
+          "Ref": "EcsTaskDefinition"
+        },
+        "LoadBalancers": [
+          {
+            "ContainerName": {
+              "Fn::Join": [
+                "",
+                [
+                  "ci-service-",
+                  {
+                    "Ref": "DockerImageTag"
+                  }
+                ]
+              ]
+            },
+            "ContainerPort": {
+              "Ref": "ContainerPort"
+            },
+            "TargetGroupArn": {
+              "Ref": "LoadBalancerTargetGroup"
+            }
+          }
+        ]
+      }
+    },
+    "EcsTaskDefinition": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": {
+          "Fn::Join": [
+            "",
+            [
+              "ci-service-",
+              {
+                "Ref": "DockerImageTag"
+              }
+            ]
+          ]
+        },
+        "ContainerDefinitions": [
+          {
+            "Name": {
+              "Fn::Join": [
+                "",
+                [
+                  "ci-service-",
+                  {
+                    "Ref": "DockerImageTag"
+                  }
+                ]
+              ]
+            },
+            "Image": {
+              "Fn::Join": [
+                "",
+                [
+                  {
+                    "Ref": "EcsRepoUrl"
+                  }
+                ]
+              ]
+            },
+            "Cpu": 2000,
+            "MemoryReservation": 900,
+            "Environment": [],
+            "PortMappings": [
+              {
+                "HostPort": {
+                  "Ref": "ContainerPort"
+                },
+                "ContainerPort": {
+                  "Ref": "ContainerPort"
+                }
+              }
+            ]
+          }
+        ],
+        "Volumes": []
+      }
+    },
+    "EcsServiceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ecs.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "ecs-service",
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
+                    "elasticloadbalancing:DeregisterTargets",
+                    "elasticloadbalancing:Describe*",
+                    "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
+                    "elasticloadbalancing:RegisterTargets",
+                    "ec2:Describe*",
+                    "ec2:AuthorizeSecurityGroupIngress"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "EcsServiceName": {
+      "Description": "Name of the ECS Service",
+      "Value": {
+        "Ref": "EcsService"
+      }
+    },
+    "EcsTaskDefinition": {
+      "Value": {
+        "Ref": "EcsTaskDefinition"
+      }
+    },
+    "EcsLoadBalancerDns": {
+      "Description": "Load Balancer DNS URL",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            {
+              "Fn::GetAtt": [
+                "LoadBalancer",
+                "DNSName"
+              ]
+            }
+          ]
+        ]
+      }
+    }
+  }
+}
