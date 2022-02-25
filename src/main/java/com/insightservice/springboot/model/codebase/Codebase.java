@@ -193,9 +193,6 @@ public class Codebase implements CodeBaseObservable {
 //
 //        notifyObserversOfBranchChange(getSetOfFiles(), targetCommit, currentGroupingMode, currentHeatMetricOption);
 //    }
-    public void setActiveBranch(String activeBranch) {
-        this.activeBranch = activeBranch;
-    }
 
     public void newHeatMetricSelected(HeatMetricOptions newHeatMetricOption) {
         currentHeatMetricOption = newHeatMetricOption;

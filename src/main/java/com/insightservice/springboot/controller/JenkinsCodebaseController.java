@@ -32,11 +32,13 @@ public class JenkinsCodebaseController
     {
         String remoteUrl = urlPayload.getGithubUrl();
 
-        LOG.info("Beginning analysis of the repository with URL `"+ remoteUrl +"`...");
+        LOG.info("Beginning general analysis of the repository with URL `"+ remoteUrl +"`...");
         //Analyze Codebase
-        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(remoteUrl, USE_DEFAULT_BRANCH);
+        String branchName = "intentional-bugs"; //TEMP
+        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(remoteUrl, branchName);
 
-        JenkinsAnalyzer.requestAndStoreConsoleData(codebase);
+        LOG.info("Beginning Jenkins analysis of the repository with URL `"+ remoteUrl +"`...");
+        JenkinsAnalyzer.attachJenkinsStackTraceActivityToCodebase(codebase); //TODO set up a Service for this
 
         return new ResponseEntity<Codebase>(codebase, HttpStatus.OK);
     }
