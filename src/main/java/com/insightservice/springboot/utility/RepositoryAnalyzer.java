@@ -279,6 +279,7 @@ public class RepositoryAnalyzer {
             // Get the FileObject's HeatObject for this commit
             HeatObject heatObject = fileObject.createOrGetHeatObjectAtCommit(processCommit.getName());
             heatObject.setFilename(fileObject.getFilename());
+            fileObject.setLatestHeatObject(heatObject);
             // That's all we can do if no previous commit found.
             return;
         }
@@ -287,6 +288,7 @@ public class RepositoryAnalyzer {
         // The steps after this one will overwrite any that have updated.
         HeatObject previousHeatObject = fileObject.getHeatObjectAtCommit(previousCommitHashId); // if this is null this is a problem or something needs update
         HeatObject processHeatObject = fileObject.createOrGetHeatObjectAtCommit(processCommit.getName()); // this should always be a creation
+        fileObject.setLatestHeatObject(processHeatObject);
 
         // TODO in the future we can add the some sort of drop off here so as they don't change over commits they become less hot.
         processHeatObject.setFilename(fileObject.getFilename()); // I think this is necessary

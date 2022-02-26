@@ -1,5 +1,6 @@
 package com.insightservice.springboot.model.codebase;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.insightservice.springboot.observer.CodeBaseObservable;
 import com.insightservice.springboot.Constants;
 import com.insightservice.springboot.Constants.GroupingMode;
@@ -23,6 +24,7 @@ public class Codebase implements CodeBaseObservable {
     private final List<CodeBaseObserver> observerList = new LinkedList<>();
     private final LinkedHashSet<String> branchNameList;
     private String activeBranch;
+    @JsonIgnore
     private LinkedHashSet<Commit> activeCommits;
     private LinkedHashSet<FileObject> activeFileObjects;
     private String projectRootPath;
