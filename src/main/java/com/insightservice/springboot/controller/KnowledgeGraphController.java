@@ -42,7 +42,7 @@ public class KnowledgeGraphController
 
         LOG.info("Beginning analysis of the repository with URL `"+ remoteUrl +"`...");
         //Analyze Codebase
-        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(remoteUrl, USE_DEFAULT_BRANCH);
+        Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(remoteUrl, USE_DEFAULT_BRANCH);
 
         TreeMap<String, TreeSet<FileObject>> commitContiguityMap = GroupFileObjectUtility.groupByCommit(codebase);
 

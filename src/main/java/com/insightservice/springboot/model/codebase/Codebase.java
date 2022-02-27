@@ -9,6 +9,7 @@ import com.insightservice.springboot.observer.CodeBaseObserver;
 import com.insightservice.springboot.utility.GroupFileObjectUtility;
 import com.insightservice.springboot.utility.HeatCalculationUtility;
 import com.insightservice.springboot.utility.RepositoryAnalyzer;
+import org.springframework.data.annotation.Id;
 
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
@@ -19,6 +20,8 @@ import java.util.stream.Collectors;
 public class Codebase implements CodeBaseObservable {
 
     // region Vars
+    @Id
+    private String gitHubUrl;
     private static TreeMap<String, TreeSet<FileObject>> packageBasedMapGroup;
     private static TreeMap<String, TreeSet<FileObject>> commitBasedMapGroup;
     private final List<CodeBaseObserver> observerList = new LinkedList<>();
@@ -71,8 +74,20 @@ public class Codebase implements CodeBaseObservable {
     }
 
     // region Getters/Setters
+    public String getGitHubUrl() {
+        return gitHubUrl;
+    }
+
+    public void setGitHubUrl(String gitHubUrl) {
+        this.gitHubUrl = gitHubUrl;
+    }
+
     public String getActiveBranch() {
         return activeBranch;
+    }
+
+    public void setActiveBranch(String activeBranch) {
+        this.activeBranch = activeBranch;
     }
 
     public LinkedHashSet<String> getBranchNameList() {

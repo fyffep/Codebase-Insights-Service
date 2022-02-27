@@ -35,7 +35,7 @@ public class JenkinsCodebaseController
         LOG.info("Beginning general analysis of the repository with URL `"+ remoteUrl +"`...");
         //Analyze Codebase
         String branchName = "intentional-bugs"; //TEMP
-        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(remoteUrl, branchName);
+        Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(remoteUrl, branchName);
 
         LOG.info("Beginning Jenkins analysis of the repository with URL `"+ remoteUrl +"`...");
         JenkinsAnalyzer.attachJenkinsStackTraceActivityToCodebase(codebase); //TODO set up a Service for this

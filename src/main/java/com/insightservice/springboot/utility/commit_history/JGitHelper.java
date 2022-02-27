@@ -2,9 +2,11 @@ package com.insightservice.springboot.utility.commit_history;
 
 import com.insightservice.springboot.exception.BadBranchException;
 import com.insightservice.springboot.exception.BadUrlException;
+import com.insightservice.springboot.model.codebase.Codebase;
 import org.apache.tomcat.util.http.fileupload.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
@@ -12,6 +14,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.Collection;
+import java.util.Map;
 
 import static com.insightservice.springboot.Constants.*;
 
@@ -126,6 +130,55 @@ public class JGitHelper
         assert pathToRepository.exists();
 
         return openLocalRepository(pathToRepository);
+    }
+
+    /**
+     * Returns true if the latestCommit of the input
+     * Codebase is actually the latest commit on the remote counterpart.
+     * This is branch-specific and dependent on the Codebase's activeBranch.
+     * @param codebase a codebase that was analyzed on an earlier date and was
+     *                 retrieved from the database.
+     * @return true if the codebase's latestCommit is, in fact, the latest commit.
+     * Returns false for errors, such as the branch not existing on the remote counterpart.
+     */
+    public static boolean checkIfLatestCommitIsUpToDate(Codebase codebase) throws GitAPIException
+    {
+        //Validate GitHub url & active branch
+        String remoteUrl = codebase.getGitHubUrl();
+        assert remoteUrl != null;
+        assert !remoteUrl.isBlank();
+        String activeBranch = codebase.getActiveBranch();
+        assert activeBranch != null;
+        assert !activeBranch.isBlank();
+        String codebaseLatestCommit = codebase.getLatestCommitHash();
+        assert codebaseLatestCommit != null;
+        assert !codebaseLatestCommit.isBlank();
+
+        //Obtain latest commit hashes from every branch
+        Collection<Ref> refs = Git.lsRemoteRepository()
+                .setRemote(remoteUrl)
+                .call();
+
+        for (Ref ref : refs)
+        {
+            //Sanity checking
+            if (ref.getName() == null || ref.getObjectId() == null)
+            {
+                LOG.error("Ref `"+ref+"` is corrupt.");
+                continue;
+            }
+
+            //If latest remote commit == latest codebase commit, then return true
+            String remoteBranchName = ref.getName();
+            String latestCommitOnBranch = ref.getObjectId().getName();
+            if (remoteBranchName.endsWith(activeBranch))
+            {
+                return codebase.getLatestCommitHash().equals(latestCommitOnBranch);
+            }
+        }
+
+        LOG.error("checkIfLatestCommitIsUpToDate(...) failed. The branch `" + activeBranch + "` does not exist on the remote repository.");
+        return false;
     }
 
 

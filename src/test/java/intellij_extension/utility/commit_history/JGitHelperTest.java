@@ -1,6 +1,7 @@
 package intellij_extension.utility.commit_history;
 
 import com.insightservice.springboot.exception.BadUrlException;
+import com.insightservice.springboot.model.codebase.Codebase;
 import com.insightservice.springboot.utility.RepositoryAnalyzer;
 import com.insightservice.springboot.utility.commit_history.JGitHelper;
 import org.apache.tomcat.util.http.fileupload.FileUtils;
@@ -72,5 +73,37 @@ public class JGitHelperTest
             File file = JGitHelper.getPathOfLocalRepository("");  //method being tested
             assertNotNull(file);
         });
+    }
+
+
+
+    @Test
+    void checkIfLatestCommitIsUpToDate_LatestCommit_MasterBranch() throws GitAPIException {
+        Codebase codebase = new Codebase();
+        codebase.setGitHubUrl(VALID_REMOTE_URL);
+        codebase.setActiveBranch(MASTER_BRANCH);
+        codebase.setLatestCommitHash("c60e6975fb2c60810cd2eedf31bf5075b3d02cd4"); //you should update with the latest commit if this fails
+
+        assertTrue(JGitHelper.checkIfLatestCommitIsUpToDate(codebase)); //method being tested
+    }
+
+    @Test
+    void checkIfLatestCommitIsUpToDate_OldCommit_MasterBranch() throws GitAPIException {
+        Codebase codebase = new Codebase();
+        codebase.setGitHubUrl(VALID_REMOTE_URL);
+        codebase.setActiveBranch(MASTER_BRANCH);
+        codebase.setLatestCommitHash("4c98689dd08627fed0e5e4363efd101d6e4cb1c0"); //some random hash in our commit history
+
+        assertFalse(JGitHelper.checkIfLatestCommitIsUpToDate(codebase)); //method being tested
+    }
+
+    @Test
+    void checkIfLatestCommitIsUpToDate_LatestCommit_OtherBranch() throws GitAPIException {
+        Codebase codebase = new Codebase();
+        codebase.setGitHubUrl(VALID_REMOTE_URL);
+        codebase.setActiveBranch("ui-development-commit-history");
+        codebase.setLatestCommitHash("5c92c6f0818dd2b139cfb1f054c89ef7797dbe09"); //this is the final commit on this dead branch
+
+        assertTrue(JGitHelper.checkIfLatestCommitIsUpToDate(codebase)); //method being tested
     }
 }

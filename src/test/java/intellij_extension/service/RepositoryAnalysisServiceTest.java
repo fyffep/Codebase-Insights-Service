@@ -59,7 +59,7 @@ public class RepositoryAnalysisServiceTest
     {
         //This codebase doesn't have a master branch, but we don't specify a branch to clone
         assertDoesNotThrow(() ->{
-            repositoryAnalysisService.extractDataToCodebase(MAIN_ONLY_BRANCH_REMOTE_URL, Constants.USE_DEFAULT_BRANCH);
+            repositoryAnalysisService.getOrCreateCodebase(MAIN_ONLY_BRANCH_REMOTE_URL, Constants.USE_DEFAULT_BRANCH);
         });
     }
 
@@ -67,7 +67,7 @@ public class RepositoryAnalysisServiceTest
     public void extractDataToCodebase_ValidUrl_ValidBranch()
     {
         assertDoesNotThrow(() ->{
-            repositoryAnalysisService.extractDataToCodebase(VALID_REMOTE_URL, MASTER_BRANCH);
+            repositoryAnalysisService.getOrCreateCodebase(VALID_REMOTE_URL, MASTER_BRANCH);
         });
     }
     //endregion

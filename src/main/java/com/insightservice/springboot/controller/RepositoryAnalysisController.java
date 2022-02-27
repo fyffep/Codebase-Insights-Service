@@ -35,7 +35,7 @@ public class RepositoryAnalysisController
 
         LOG.info("Beginning analysis of the repository with URL `"+ remoteUrl +"`...");
         //Analyze Codebase
-        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(remoteUrl, USE_DEFAULT_BRANCH);
+        Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(remoteUrl, USE_DEFAULT_BRANCH);
 
         return new ResponseEntity<Codebase>(codebase, HttpStatus.OK);
     }
@@ -47,7 +47,7 @@ public class RepositoryAnalysisController
 
         LOG.info("Beginning analysis of the repository with URL `"+ remoteUrl +"`...");
         //Analyze Codebase
-        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(remoteUrl, USE_DEFAULT_BRANCH);
+        Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(remoteUrl, USE_DEFAULT_BRANCH);
 
         //TODO we'd want to write the codebase to the database here so that it can be retrieved later.
 
@@ -67,7 +67,7 @@ public class RepositoryAnalysisController
 
         LOG.info("Beginning analysis of the repository with URL `"+ remoteUrl +"`...");
         //Analyze Codebase
-        Codebase codebase = repositoryAnalysisService.extractDataToCodebase(remoteUrl, USE_DEFAULT_BRANCH);
+        Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(remoteUrl, USE_DEFAULT_BRANCH);
 
         //Format the files present on the latest commit into a tree structure
         RepoPackage fileTree = FileTreeCreator.createFileTree(
