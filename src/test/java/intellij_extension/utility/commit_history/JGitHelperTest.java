@@ -5,7 +5,9 @@ import com.insightservice.springboot.model.codebase.Codebase;
 import com.insightservice.springboot.utility.RepositoryAnalyzer;
 import com.insightservice.springboot.utility.commit_history.JGitHelper;
 import org.apache.tomcat.util.http.fileupload.FileUtils;
+import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.RefNotAdvertisedException;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -105,5 +107,33 @@ public class JGitHelperTest
         codebase.setLatestCommitHash("5c92c6f0818dd2b139cfb1f054c89ef7797dbe09"); //this is the final commit on this dead branch
 
         assertTrue(JGitHelper.checkIfLatestCommitIsUpToDate(codebase)); //method being tested
+    }
+
+
+
+    @Test
+    void updateLocalRepository_MainBranch() throws IOException, GitAPIException {
+        final String BRANCH_UNDER_TEST = "main";
+        final String REMOTE_URL = "https://github.com/fyffep/MainBranchOnlyRepo";
+        //region testing environment setup
+        //Perform a clone of the latest version of the repo
+        File directory = JGitHelper.getPathOfLocalRepository(REMOTE_URL);
+        if (directory.exists())
+            FileUtils.deleteDirectory(directory); //deletion makes each test independent
+        directory.mkdirs();
+        try (Git result = Git.cloneRepository()
+                .setBranch(BRANCH_UNDER_TEST)
+                .setURI(REMOTE_URL)
+                .setDirectory(directory)
+                .call()) {
+        }
+        //endregion
+
+        JGitHelper.updateLocalRepository(REMOTE_URL); //method under test
+        //just make sure it doesn't throw anything
+
+        //region cleanup
+        FileUtils.deleteDirectory(directory);
+        //endregion
     }
 }

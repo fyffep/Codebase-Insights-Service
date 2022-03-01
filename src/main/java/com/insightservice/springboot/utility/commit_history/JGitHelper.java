@@ -5,10 +5,14 @@ import com.insightservice.springboot.exception.BadUrlException;
 import com.insightservice.springboot.model.codebase.Codebase;
 import org.apache.tomcat.util.http.fileupload.FileUtils;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.MergeResult;
+import org.eclipse.jgit.api.PullCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.RefNotAdvertisedException;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.eclipse.jgit.transport.FetchResult;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -181,52 +185,15 @@ public class JGitHelper
         return false;
     }
 
-
-
-
-
-
-
-
-
-
-
-
-    //UNUSED
-    /*public static Repository openLocalRepository() throws IOException
-    {
-        final String projectRootPath = locateProjectRoot();
-        assert projectRootPath != null;
-
-        FileRepositoryBuilder builder = new FileRepositoryBuilder();
-        return builder
-                .readEnvironment() // scan environment GIT_* variables
-                //.findGitDir() // scan up the file system tree
-                .findGitDir(new File(projectRootPath))
-                .build();
-    }*/
-
-    //UNUSED
     /**
-     * @return the path of the project that the user has open in IntelliJ or null
-     * as a default.
+     * This is the equivalent of running "git pull". It works with whatever branch
+     * is currently active for the cloned repo.
      */
-    /*public static String locateProjectRoot()
-    {
-        //Pull the 'project' from CodebaseInsightsToolWindowFactory, and wait until it exists if necessary
-        synchronized (CodebaseInsightsToolWindowFactory.projectSynchronizer) {
-            if (CodebaseInsightsToolWindowFactory.getProject() == null) {
-                try {
-                    //Wait until the 'project' is not-null
-                    CodebaseInsightsToolWindowFactory.projectSynchronizer.wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-
-                    //Restore interrupted state... (recommended by SonarQube)
-                    Thread.currentThread().interrupt();
-                }
+    public static void updateLocalRepository(String remoteUrl) throws IOException, GitAPIException {
+        try (Repository repository = openLocalRepository(remoteUrl)) {
+            try (Git git = new Git(repository)) {
+                git.pull().call();
             }
         }
-        return CodebaseInsightsToolWindowFactory.getProject().getBasePath();
-    }*/
+    }
 }
