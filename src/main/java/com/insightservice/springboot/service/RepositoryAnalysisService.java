@@ -1,7 +1,11 @@
 package com.insightservice.springboot.service;
 
 import com.insightservice.springboot.model.codebase.Codebase;
+import com.insightservice.springboot.model.codebase.Commit;
+import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.repository.CodebaseRepository;
+import com.insightservice.springboot.repository.CommitRepository;
+import com.insightservice.springboot.repository.FileObjectRepository;
 import com.insightservice.springboot.utility.HeatCalculationUtility;
 import com.insightservice.springboot.utility.RepositoryAnalyzer;
 import com.insightservice.springboot.utility.commit_history.JGitHelper;
@@ -9,15 +13,22 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 
 import static com.insightservice.springboot.Constants.LOG;
+import static com.insightservice.springboot.Constants.USE_DEFAULT_BRANCH;
 
 @Service
 public class RepositoryAnalysisService
 {
     @Autowired
     CodebaseRepository codebaseRepository;
+    @Autowired
+    FileObjectRepository fileObjectRepository;
+    @Autowired
+    CommitRepository commitRepository;
 
     public void cloneRemoteRepository(String remoteUrl, String branchName) throws GitAPIException, IOException
     {
@@ -32,7 +43,7 @@ public class RepositoryAnalysisService
         //if branch changed OR
         //if codebase is outdated due to a new commit
         if (codebase == null ||
-                !codebase.getActiveBranch().equals(branchName) ||
+                (!codebase.getActiveBranch().equals(branchName) && !branchName.equals(USE_DEFAULT_BRANCH)) ||
                 !JGitHelper.checkIfLatestCommitIsUpToDate(codebase))
         {
             codebase = extractDataToCodebase(remoteUrl, branchName);
@@ -70,7 +81,18 @@ public class RepositoryAnalysisService
 
             //Persist the codebase
             codebase.setGitHubUrl(remoteUrl);
+            LOG.info("Saving Codebase to database...");
             codebaseRepository.save(codebase);
+            LOG.info("Saving FileObjects to database...");
+            for (FileObject fileObject : codebase.getActiveFileObjects()) {
+                fileObject.setPathForDatabase(fileObject.getPath().toString());
+                fileObjectRepository.save(fileObject);
+            }
+            for (Commit commit : codebase.getActiveCommits()) {
+                commitRepository.save(commit);
+            }
+            LOG.info("Saving Commits to database...");
+            LOG.info("All codebase data successfully saved to database.");
 
             return codebase;
         }
