@@ -4,16 +4,20 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.insightservice.springboot.exception.BadUrlException;
 import com.insightservice.springboot.model.JenkinsBuild;
 import com.insightservice.springboot.model.codebase.Codebase;
 import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.model.codebase.HeatObject;
 import com.insightservice.springboot.utility.commit_history.JGitHelper;
+import org.apache.http.HttpStatus;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.*;
 
 import static com.insightservice.springboot.Constants.LOG;
@@ -21,7 +25,7 @@ import static com.insightservice.springboot.Constants.LOG;
 
 public class JenkinsAnalyzer
 {
-    private static ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     //TEMP
     static String username = "";
@@ -81,7 +85,7 @@ public class JenkinsAnalyzer
         //Parse specific build
         WebClient client = WebClient.create(jenkinsHost);
         String response = client.get()
-                .uri(String.format("job/P565-SP21-Patient-Manager/%d/api/json", buildNumber))
+                .uri(String.format("job/%s/%d/api/json", jobName, buildNumber))
                 .headers(headers -> headers.setBasicAuth(username, apiKey))
                 .retrieve()
                 .bodyToMono(String.class)
@@ -111,42 +115,6 @@ public class JenkinsAnalyzer
     }
 
 
-    //UNUSED: This doesn't always point to the right commit hash. It just ensures the branch is correct.
-    //Can be deleted.
-//    public static String getCommitHashFromBuildNumber(int buildNumber, String branchName) throws JsonProcessingException
-//    {
-//        //Parse specific build
-//        WebClient client = WebClient.create(jenkinsHost);
-//        String response = client.get()
-//                .uri(String.format("job/P565-SP21-Patient-Manager/%d/api/json", buildNumber))
-//                .headers(headers -> headers.setBasicAuth(username, apiKey))
-//                .retrieve()
-//                .bodyToMono(String.class)
-//                .block();
-//
-//        ObjectMapper objectMapper = new ObjectMapper();
-//        final ObjectNode root = objectMapper.readValue(response, ObjectNode.class);
-//        JsonNode actionsArray = root.get("actions");
-//        JsonNode action1 = actionsArray.get(1);
-//        JsonNode buildsByBranchNameArray = action1.get("buildsByBranchName");
-//        Iterator<String> branchNameIterator = buildsByBranchNameArray.fieldNames();
-//        while (branchNameIterator.hasNext())
-//        {
-//            String branchNameInJson = branchNameIterator.next();
-//            System.out.println("branchJson = "+branchNameInJson);
-//            if (branchNameInJson.toString().endsWith(branchName))
-//            {
-//                JsonNode buildJson = buildsByBranchNameArray.get(branchNameInJson);
-//                JsonNode markedJson = buildJson.get("marked");
-//
-//                return markedJson.get("SHA1").toString();
-//            }
-//        }
-//
-//        throw new BadBranchException("The branch " + branchName + " was not used for build #" + buildNumber);
-//    }
-
-
     /**
      * Returns the GitHub commit hash that was used to trigger the Jenkins build.
      * If the build did not occur on the target branch, return <code> null. </code>
@@ -156,7 +124,7 @@ public class JenkinsAnalyzer
         //Parse specific build
         WebClient client = WebClient.create(jenkinsHost);
         String response = client.get()
-                .uri(String.format("job/P565-SP21-Patient-Manager/%d/api/json", buildNumber))
+                .uri(String.format("job/%s/%d/api/json", jobName, buildNumber))
                 .headers(headers -> headers.setBasicAuth(username, apiKey))
                 .retrieve()
                 .bodyToMono(String.class)
@@ -187,7 +155,7 @@ public class JenkinsAnalyzer
      * Requests the most recent builds from Jenkins and stores them in a list of JenkinsBuilds.
      * @param maxCount the inclusive maximum number of most recent builds to fetch
      */
-    private static List<JenkinsBuild> getListOfRecentBuilds(int maxCount) throws IOException
+    private static List<JenkinsBuild> getListOfRecentBuilds(int maxCount) throws IOException, WebClientRequestException
     {
         if (maxCount < 1)
             throw new IllegalArgumentException("maxCount must be at least one");
@@ -208,8 +176,7 @@ public class JenkinsAnalyzer
         final JsonNode job0 = jobsArrayJson.get(0);
 
         JsonNode buildArrayJson = job0.get("builds");
-        for (JsonNode buildNode : buildArrayJson)
-        {
+        for (JsonNode buildNode : buildArrayJson) {
             ((ObjectNode) buildNode).remove("_class"); //allows us to convert to JenkinsBuild class
             JenkinsBuild jenkinsBuild = objectMapper.readValue(buildNode.toString(), JenkinsBuild.class);
 
@@ -290,29 +257,44 @@ public class JenkinsAnalyzer
 
     public static void attachJenkinsStackTraceActivityToCodebase(Codebase codebase) throws IOException
     {
-        //Get all the recent builds. The build numbers could be noncontiguous, like 18, 16, 15, 14, 10, 9
-        final int NUMBER_OF_BUILDS_TO_CHECK = 50;
-        int remainingBuildsToCheck = NUMBER_OF_BUILDS_TO_CHECK;
-        List<JenkinsBuild> recentBuildList = getListOfRecentBuilds(Integer.MAX_VALUE); //not sure if it's an issue to get every single build
-        for (JenkinsBuild jenkinsBuild : recentBuildList)
+        try
         {
-            if (!jenkinsBuild.isSuccessful()) //if build failed
-            {
-                //Determine which commit hash caused the build failure
-                int buildNumber = jenkinsBuild.getNumber();
-                String commitHashOfBuild = getCommitHashFromBuildNumber(buildNumber, codebase.getActiveBranch());
-
-                if (commitHashOfBuild != null)
+            //Get all the recent builds. The build numbers could be noncontiguous, like 18, 16, 15, 14, 10, 9
+            final int NUMBER_OF_BUILDS_TO_CHECK = 50;
+            int remainingBuildsToCheck = NUMBER_OF_BUILDS_TO_CHECK;
+            List<JenkinsBuild> recentBuildList = getListOfRecentBuilds(Integer.MAX_VALUE); //not sure if it's an issue to get every single build
+            for (JenkinsBuild jenkinsBuild : recentBuildList) {
+                if (!jenkinsBuild.isSuccessful()) //if build failed
                 {
-                    //Find which files appeared in the stack trace at that build, then increment their counter in the Codebase
-                    requestAndStoreConsoleData(buildNumber, codebase, commitHashOfBuild);
+                    //Determine which commit hash caused the build failure
+                    int buildNumber = jenkinsBuild.getNumber();
+                    String commitHashOfBuild = getCommitHashFromBuildNumber(buildNumber, codebase.getActiveBranch());
 
-                    remainingBuildsToCheck--;
-                    if (remainingBuildsToCheck <= 0)
-                        return;
+                    if (commitHashOfBuild != null) {
+                        //Find which files appeared in the stack trace at that build, then increment their counter in the Codebase
+                        requestAndStoreConsoleData(buildNumber, codebase, commitHashOfBuild);
+
+                        remainingBuildsToCheck--;
+                        if (remainingBuildsToCheck <= 0)
+                            return;
+                    }
+                    //Else, the target branch was not used for the build, so don't count the build.
                 }
-                //Else, the target branch was not used for the build, so don't count the build.
             }
+        }
+        catch (WebClientRequestException ex)
+        {
+            if (ex.getCause() instanceof UnknownHostException) {
+                throw new UnknownHostException("The Jenkins URL is invalid.");
+            }
+            throw ex; //else, idk what happened
+        }
+        catch (WebClientResponseException ex)
+        {
+            if (ex.getRawStatusCode() == HttpStatus.SC_UNAUTHORIZED) { //401 error
+                throw new BadUrlException("The Jenkins job name is invalid, or your API key does not grant you permission to access the job.");
+            }
+            throw ex; //else, idk what happened
         }
     }
 
