@@ -1,40 +1,33 @@
 package com.insightservice.springboot.model.codebase;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.insightservice.springboot.observer.CodeBaseObservable;
 import com.insightservice.springboot.Constants;
 import com.insightservice.springboot.Constants.GroupingMode;
-import com.insightservice.springboot.Constants.HeatMetricOptions;
-import com.insightservice.springboot.observer.CodeBaseObserver;
-import com.insightservice.springboot.utility.GroupFileObjectUtility;
-import com.insightservice.springboot.utility.HeatCalculationUtility;
 import com.insightservice.springboot.utility.RepositoryAnalyzer;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 
-import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
 
-public class Codebase implements CodeBaseObservable {
-
+public class Codebase
+{
     // region Vars
     @Id
     private String gitHubUrl;
-    private static TreeMap<String, TreeSet<FileObject>> packageBasedMapGroup;
-    private static TreeMap<String, TreeSet<FileObject>> commitBasedMapGroup;
-    private final List<CodeBaseObserver> observerList = new LinkedList<>();
+    @Transient
     private final LinkedHashSet<String> branchNameList;
     private String activeBranch;
     @JsonIgnore
+    @Transient //lazy loaded
     private LinkedHashSet<Commit> activeCommits;
+    @Transient //lazy loaded
     private LinkedHashSet<FileObject> activeFileObjects;
     private String projectRootPath;
     private String latestCommitHash;
     private String targetCommit;
     private GroupingMode currentGroupingMode = GroupingMode.PACKAGES;
-    private HeatMetricOptions currentHeatMetricOption = HeatMetricOptions.OVERALL; //TODO remove
     // endregion
 
     // region Constructor
@@ -43,8 +36,6 @@ public class Codebase implements CodeBaseObservable {
         branchNameList = new LinkedHashSet<>();
         activeCommits = new LinkedHashSet<>();
         activeFileObjects = new LinkedHashSet<>();
-        packageBasedMapGroup = new TreeMap<>();
-        commitBasedMapGroup = new TreeMap<>();
     }
     // endregion
 
@@ -171,21 +162,6 @@ public class Codebase implements CodeBaseObservable {
     }
     // endregion
 
-    // region Controller Communication
-    public void heatMapComponentSelected(String path) {
-        FileObject selectedFile = getFileObjectFromFilename(RepositoryAnalyzer.getFilename(path));
-
-        // Get commits associated with file
-        ArrayList<Commit> associatedCommits = (ArrayList<Commit>) activeCommits.stream()
-                .filter(commit -> commit.getFileSet().contains(selectedFile.getFilename()))
-                .collect(Collectors.toList());
-
-        notifyObserversOfRefreshFileCommitHistory(selectedFile, associatedCommits);
-    }
-
-    public void branchListRequested() {
-        notifyObserversOfBranchList();
-    }
 
 //    public void newBranchSelected(String branchName) {
 //        // Branch doesn't exist - or we don't know about it some how...
@@ -206,133 +182,10 @@ public class Codebase implements CodeBaseObservable {
 //        commitBasedMapGroup.clear();
 //        latestCommitHash = "";
 //
-//        RepositoryAnalyzer.attachCodebaseData(this); //TODO reconsider whether we should support branch change via cloning all branches at once
+//        RepositoryAnalyzer.attachCodebaseData(this);
 //
 //        notifyObserversOfBranchChange(getSetOfFiles(), targetCommit, currentGroupingMode, currentHeatMetricOption);
 //    }
 
-    public void newHeatMetricSelected(HeatMetricOptions newHeatMetricOption) {
-        currentHeatMetricOption = newHeatMetricOption;
-
-        notifyObserversOfRefreshHeatMap(getSetOfFiles(), targetCommit, currentGroupingMode, currentHeatMetricOption);
-    }
-
-    public void commitSelected(String commitHash) {
-        Commit selectedCommit = getCommitFromCommitHash(commitHash);
-
-        notifyObserversOfRefreshCommitDetails(selectedCommit);
-    }
-
-    public void changeHeatMapToCommit(String commitHash) {
-        System.out.println("Update HeatMapComponents to this commitHash: " + commitHash);
-        // TODO - Implement UI and backend logic.
-    }
-
-
-    public void heatMapGroupingChanged(@NotNull GroupingMode newGroupingMode) {
-        currentGroupingMode = newGroupingMode;
-
-        notifyObserversOfRefreshHeatMap(getSetOfFiles(), targetCommit, currentGroupingMode, currentHeatMetricOption);
-    }
-    // endregion
-
-    //region Data packaging
-
-
-    //FIXME @Abhishek
-    /*public TreeMap<String, TreeSet<FileObject>> getSetOfFiles() {
-        // Update views with data
-        switch (currentGroupingMode) {
-            case COMMITS:
-                if (commitBasedMapGroup.isEmpty()) commitBasedMapGroup = groupDataByCommits();
-                return commitBasedMapGroup;
-            case PACKAGES:
-            default:
-                if (packageBasedMapGroup.isEmpty()) packageBasedMapGroup = groupDataByPackages();
-                return packageBasedMapGroup;
-        }
-    }*/
-    public TreeMap<String, TreeSet<FileObject>> getSetOfFiles() {
-        // Update views with data
-        TreeMap<String, TreeSet<FileObject>> setOfFiles;
-        switch (currentGroupingMode) {
-            case COMMITS:
-                setOfFiles = groupDataByCommits();
-                break;
-            case PACKAGES:
-            default:
-                setOfFiles = groupDataByPackages();
-                break;
-        }
-        return setOfFiles;
-    }
-
-    public TreeMap<String, TreeSet<FileObject>> groupDataByCommits() {
-        System.out.println("groupDataByCommits called");
-
-        // Calculate heat based on the selected metric
-        HeatCalculationUtility.assignHeatLevels(this);
-
-        //Group by commit
-        return GroupFileObjectUtility.groupByCommit(this);
-    }
-
-    public TreeMap<String, TreeSet<FileObject>> groupDataByPackages() {
-        System.out.println("groupDataByPackages called");
-
-        // Calculate heat based on the selected metric
-        HeatCalculationUtility.assignHeatLevels(this);
-
-        //Group by package
-        return GroupFileObjectUtility.groupByPackage(getProjectRootPath(), activeFileObjects);
-    }
-
     //endregion
-
-    // region Observable Methods
-    @Override
-    public void notifyObserversOfRefreshHeatMap(TreeMap<String, TreeSet<FileObject>> setOfFiles, String targetCommit, GroupingMode currentGroupingMode, HeatMetricOptions currentHeatMetricOption) {
-        for (CodeBaseObserver observer : observerList) {
-            observer.refreshHeatMap(setOfFiles, targetCommit, currentGroupingMode, currentHeatMetricOption);
-        }
-    }
-
-    @Override
-    public void notifyObserversOfBranchList() {
-        for (CodeBaseObserver observer : observerList) {
-            observer.branchListRequested(activeBranch, branchNameList.iterator());
-        }
-    }
-
-    @Override
-    public void notifyObserversOfBranchChange(TreeMap<String, TreeSet<FileObject>> setOfFiles, String targetCommit, GroupingMode currentGroupingMode, HeatMetricOptions currentHeatMetricOption) {
-        for (CodeBaseObserver observer : observerList) {
-            observer.newBranchSelected(setOfFiles, targetCommit, currentGroupingMode, currentHeatMetricOption);
-        }
-    }
-
-    @Override
-    public void notifyObserversOfRefreshFileCommitHistory(FileObject selectedFile, ArrayList<Commit> filesCommits) {
-        for (CodeBaseObserver observer : observerList) {
-            observer.fileSelected(selectedFile, filesCommits.iterator());
-        }
-    }
-
-    @Override
-    public void notifyObserversOfRefreshCommitDetails(Commit commit) {
-        for (CodeBaseObserver observer : observerList) {
-            observer.commitSelected(commit);
-        }
-    }
-
-    @Override
-    public void registerObserver(CodeBaseObserver observer) {
-        observerList.add(observer);
-    }
-
-    @Override
-    public void unregisterObserver(CodeBaseObserver observer) {
-        observerList.remove(observer);
-    }
-    // endregion
 }
