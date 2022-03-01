@@ -35,11 +35,15 @@ public class Constants
     public static final String FILE_SIZE_TEXT = "File Size";
     public static final String NUMBER_OF_COMMITS_TEXT = "Number of Commits";
     public static final String NUMBER_OF_AUTHORS_TEXT = "Number of Authors";
+    public static final String DEGREE_OF_COUPLING_TEXT = "Degree of Coupling to Related Files";
+    public static final String COMMIT_RATIO_TEXT = "Build Failure Commit Ratio";
     public static final List<String> HEAT_METRIC_OPTIONS = Arrays.asList(
             OVERALL_TEXT,
             FILE_SIZE_TEXT,
             NUMBER_OF_COMMITS_TEXT,
-            NUMBER_OF_AUTHORS_TEXT
+            NUMBER_OF_AUTHORS_TEXT,
+            DEGREE_OF_COUPLING_TEXT,
+            COMMIT_RATIO_TEXT
     );
     // !!!
     //IMPORTANT: Make sure the HEAT_METRIC_OPTIONS and HeatMetricOptions correspond
@@ -49,12 +53,21 @@ public class Constants
         OVERALL,
         FILE_SIZE,
         NUM_OF_COMMITS,
-        NUM_OF_AUTHORS
+        NUM_OF_AUTHORS,
+        DEGREE_OF_COUPLING,
+        COMMIT_RATIO
     }
 
     // Heat
     public static final int HEAT_MIN = 1;
     public static final int HEAT_MAX = 10;
+
+    //Heat weights
+    public static final double WEIGHT_FILE_SIZE = 0.0; //combination of both lineCount and fileSize
+    public static final double WEIGHT_NUM_OF_COMMITS = 0.5;
+    public static final double WEIGHT_NUM_OF_AUTHORS = 0.5;
+    public static final double WEIGHT_DEGREE_OF_COUPLING = 0.0; //to be implemented
+    public static final double WEIGHT_COMMIT_RATIO = 0.0; //to be implemented
 
     //region UI Properties
     // Banners

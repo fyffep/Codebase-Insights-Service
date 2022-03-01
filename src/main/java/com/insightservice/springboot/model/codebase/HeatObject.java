@@ -9,16 +9,35 @@ import com.insightservice.springboot.Constants;
  */
 public class HeatObject {
 
-    private int heatLevel;
     private String filename;
+
+    //Metrics
     private long lineCount;
     private long fileSize;
     private int numberOfCommits;
     private int numberOfAuthors;
+    //private int degreeOfCoupling; //TODO; how many times it appeared in the same commit contiguity group with its coupled files
+    //private double goodBadCommitRatio; //TODO; comes from Jenkins or other CI tool
+
+    //Heat values
+    private int fileSizeHeat; //combination of both lineCount and fileSize
+    private int numberOfCommitsHeat;
+    private int numberOfAuthorsHeat;
+    private int degreeOfCouplingHeat; //to be implemented
+    private int goodBadCommitRatioHeat; //to be implemented
+    private double overallHeat;
+
 
     public HeatObject() {
         //This allows the metrics to be filled out gradually
-        heatLevel = Constants.HEAT_MIN;
+        fileSizeHeat = Constants.HEAT_MIN;
+        numberOfCommitsHeat = Constants.HEAT_MIN;
+        numberOfAuthorsHeat = Constants.HEAT_MIN;
+        degreeOfCouplingHeat = Constants.HEAT_MIN;
+        goodBadCommitRatioHeat = Constants.HEAT_MIN;
+        overallHeat = Constants.HEAT_MIN;
+        constrainHeatLevel();
+
         filename = "";
         lineCount = -1;
         fileSize = -1;
@@ -27,8 +46,14 @@ public class HeatObject {
     }
 
     public HeatObject(int heatLevel, String filename, long lineCount, long fileSize, int numberOfCommits, int numberOfAuthors) {
-        this.heatLevel = heatLevel;
+        fileSizeHeat = Constants.HEAT_MIN;
+        numberOfCommitsHeat = Constants.HEAT_MIN;
+        numberOfAuthorsHeat = Constants.HEAT_MIN;
+        degreeOfCouplingHeat = Constants.HEAT_MIN;
+        goodBadCommitRatioHeat = Constants.HEAT_MIN;
+        overallHeat = Constants.HEAT_MIN;
         constrainHeatLevel();
+
         this.filename = filename;
         this.lineCount = lineCount;
         this.fileSize = fileSize;
@@ -36,12 +61,76 @@ public class HeatObject {
         this.numberOfAuthors = numberOfAuthors;
     }
 
-    public int getHeatLevel() {
-        return heatLevel;
+    public double getHeatLevel(Constants.HeatMetricOptions heatMetric) {
+        switch (heatMetric) {
+            case FILE_SIZE:
+                return getFileSizeHeat();
+            case NUM_OF_COMMITS:
+                return getNumberOfCommitsHeat();
+            case NUM_OF_AUTHORS:
+                return getNumberOfAuthorsHeat();
+            case DEGREE_OF_COUPLING:
+                return getDegreeOfCouplingHeat();
+            case COMMIT_RATIO:
+                return getGoodBadCommitRatioHeat();
+            case OVERALL:
+                return getOverallHeat();
+            default:
+                throw new UnsupportedOperationException(heatMetric + " is not supported for HeatObject::getHeatLevel(...)");
+        }
     }
 
-    public void setHeatLevel(int heatLevel) {
-        this.heatLevel = heatLevel;
+    public int getFileSizeHeat() {
+        return fileSizeHeat;
+    }
+
+    public void setFileSizeHeat(int fileSizeHeat) {
+        this.fileSizeHeat = fileSizeHeat;
+        constrainHeatLevel();
+    }
+
+    public int getNumberOfCommitsHeat() {
+        return numberOfCommitsHeat;
+    }
+
+    public void setNumberOfCommitsHeat(int numberOfCommitsHeat) {
+        this.numberOfCommitsHeat = numberOfCommitsHeat;
+        constrainHeatLevel();
+    }
+
+    public int getNumberOfAuthorsHeat() {
+        return numberOfAuthorsHeat;
+    }
+
+    public void setNumberOfAuthorsHeat(int numberOfAuthorsHeat) {
+        this.numberOfAuthorsHeat = numberOfAuthorsHeat;
+        constrainHeatLevel();
+    }
+
+    public int getDegreeOfCouplingHeat() {
+        return degreeOfCouplingHeat;
+    }
+
+    public void setDegreeOfCouplingHeat(int degreeOfCouplingHeat) {
+        this.degreeOfCouplingHeat = degreeOfCouplingHeat;
+        constrainHeatLevel();
+    }
+
+    public int getGoodBadCommitRatioHeat() {
+        return goodBadCommitRatioHeat;
+    }
+
+    public void setGoodBadCommitRatioHeat(int goodBadCommitRatioHeat) {
+        this.goodBadCommitRatioHeat = goodBadCommitRatioHeat;
+        constrainHeatLevel();
+    }
+
+    public double getOverallHeat() {
+        return overallHeat;
+    }
+
+    public void setOverallHeat(double overallHeat) {
+        this.overallHeat = overallHeat;
         constrainHeatLevel();
     }
 
@@ -85,10 +174,27 @@ public class HeatObject {
         this.numberOfAuthors = numberOfAuthors;
     }
 
-    public void constrainHeatLevel() {
-        if (this.heatLevel < Constants.HEAT_MIN)
-            this.heatLevel = Constants.HEAT_MIN;
-        else if (this.heatLevel > Constants.HEAT_MAX)
-            this.heatLevel = Constants.HEAT_MAX;
+
+    private void constrainHeatLevel() {
+        //For each heat value, adjust it so that it inside the min-max range
+        fileSizeHeat = constrainHeatLevelHelper(fileSizeHeat);
+        numberOfCommitsHeat = constrainHeatLevelHelper(numberOfCommitsHeat);
+        numberOfAuthorsHeat = constrainHeatLevelHelper(numberOfAuthorsHeat);
+        degreeOfCouplingHeat = constrainHeatLevelHelper(degreeOfCouplingHeat);
+        goodBadCommitRatioHeat = constrainHeatLevelHelper(goodBadCommitRatioHeat);
+
+        //overall heat is the only double val
+        if (this.overallHeat < Constants.HEAT_MIN)
+            this.overallHeat = Constants.HEAT_MIN;
+        else if (this.overallHeat > Constants.HEAT_MAX)
+            this.overallHeat = Constants.HEAT_MAX;
+    }
+
+    private int constrainHeatLevelHelper(int heatInput) {
+        if (heatInput < Constants.HEAT_MIN)
+            return Constants.HEAT_MIN;
+        else if (heatInput > Constants.HEAT_MAX)
+            return Constants.HEAT_MAX;
+        return heatInput; //else, no adjustment
     }
 }
