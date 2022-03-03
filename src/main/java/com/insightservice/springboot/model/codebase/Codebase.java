@@ -6,6 +6,7 @@ import com.insightservice.springboot.Constants.GroupingMode;
 import com.insightservice.springboot.utility.RepositoryAnalyzer;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -22,7 +23,7 @@ public class Codebase
     @JsonIgnore
     @Transient //lazy loaded
     private LinkedHashSet<Commit> activeCommits;
-    @Transient //lazy loaded
+    @DBRef //eagerly loaded
     private LinkedHashSet<FileObject> activeFileObjects;
     private String projectRootPath;
     private String latestCommitHash;

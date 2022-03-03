@@ -13,9 +13,7 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 
 import static com.insightservice.springboot.Constants.LOG;
 import static com.insightservice.springboot.Constants.USE_DEFAULT_BRANCH;
@@ -46,7 +44,12 @@ public class RepositoryAnalysisService
                 (!codebase.getActiveBranch().equals(branchName) && !branchName.equals(USE_DEFAULT_BRANCH)) ||
                 !JGitHelper.checkIfLatestCommitIsUpToDate(codebase))
         {
+            LOG.info("Beginning new Codebase analysis because the repo is new or updated...");
             codebase = extractDataToCodebase(remoteUrl, branchName);
+        }
+        //Else, up-to-date codebase data exists
+        else {
+            LOG.info("Returning old Codebase data because the repo is up-to-date...");
         }
 
         return codebase;
@@ -81,17 +84,17 @@ public class RepositoryAnalysisService
 
             //Persist the codebase
             codebase.setGitHubUrl(remoteUrl);
-            LOG.info("Saving Codebase to database...");
-            codebaseRepository.save(codebase);
-            LOG.info("Saving FileObjects to database...");
+            LOG.info("Preparing FileObjects for the database...");
             for (FileObject fileObject : codebase.getActiveFileObjects()) {
                 fileObject.setPathForDatabase(fileObject.getPath().toString());
                 fileObjectRepository.save(fileObject);
             }
+            LOG.info("Saving Commits to database...");
             for (Commit commit : codebase.getActiveCommits()) {
                 commitRepository.save(commit);
             }
-            LOG.info("Saving Commits to database...");
+            LOG.info("Saving Codebase to database...");
+            codebaseRepository.save(codebase);
             LOG.info("All codebase data successfully saved to database.");
 
             return codebase;

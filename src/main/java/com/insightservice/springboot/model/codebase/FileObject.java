@@ -23,6 +23,7 @@ import java.util.Set;
 public class FileObject implements RepoTreeNode
 {
     // region Variables
+    @Id
     @JsonIgnore
     private String pathForDatabase; //TODO maybe remove the below Path var since it doesn't save to the database
     @Transient
