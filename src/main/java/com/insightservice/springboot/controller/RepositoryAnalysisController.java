@@ -1,13 +1,11 @@
 package com.insightservice.springboot.controller;
 
-import com.insightservice.springboot.Constants;
 import com.insightservice.springboot.model.codebase.*;
 import com.insightservice.springboot.model.file_tree.RepoPackage;
 import com.insightservice.springboot.payload.UrlPayload;
 import com.insightservice.springboot.service.RepositoryAnalysisService;
 import com.insightservice.springboot.utility.DashboardCalculationUtility;
 import com.insightservice.springboot.utility.FileTreeCreator;
-import com.insightservice.springboot.utility.HeatCalculationUtility;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -28,28 +26,34 @@ public class RepositoryAnalysisController
     @Autowired
     private RepositoryAnalysisService repositoryAnalysisService;
 
-    @PostMapping("/codebase")
-    public ResponseEntity<?> analyzeEntireCodebase(@RequestBody UrlPayload urlPayload, BindingResult result) throws GitAPIException, IOException
+
+    @PostMapping("/initiate")
+    public ResponseEntity<?> initiateAnalysis(@RequestBody UrlPayload urlPayload, BindingResult result) throws GitAPIException, IOException
     {
+        //TODO Jenkins url & apiKey need to be sent as well
         String remoteUrl = urlPayload.getGithubUrl();
+
+        String branchName = "intentional-bugs"; //TEMP for Jenkins
 
         LOG.info("Beginning analysis of the repository with URL `"+ remoteUrl +"`...");
         //Analyze Codebase
-        Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(remoteUrl, USE_DEFAULT_BRANCH);
+        Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(remoteUrl, branchName);
+
+        //Analyze Jenkins data
+        LOG.info("Beginning Jenkins analysis of the repository with URL `"+ remoteUrl +"`...");
+        repositoryAnalysisService.attachJenkinsData(codebase);
 
         return new ResponseEntity<Codebase>(codebase, HttpStatus.OK);
     }
+
 
     @PostMapping("/dashboard")
     public ResponseEntity<?> computeDashboardData(@RequestBody UrlPayload urlPayload, BindingResult result) throws GitAPIException, IOException
     {
         String remoteUrl = urlPayload.getGithubUrl();
 
-        LOG.info("Beginning analysis of the repository with URL `"+ remoteUrl +"`...");
-        //Analyze Codebase
+        //Retrieve codebase
         Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(remoteUrl, USE_DEFAULT_BRANCH);
-
-        //TODO we'd want to write the codebase to the database here so that it can be retrieved later.
 
         //Get dashboard data
         DashboardModel dashboardModel = DashboardCalculationUtility.assignDashboardData(codebase);
@@ -65,8 +69,7 @@ public class RepositoryAnalysisController
     {
         String remoteUrl = urlPayload.getGithubUrl();
 
-        LOG.info("Beginning analysis of the repository with URL `"+ remoteUrl +"`...");
-        //Analyze Codebase
+        //Retrieve codebase
         Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(remoteUrl, USE_DEFAULT_BRANCH);
 
         //Format the files present on the latest commit into a tree structure

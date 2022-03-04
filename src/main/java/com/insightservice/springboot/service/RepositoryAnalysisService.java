@@ -7,6 +7,7 @@ import com.insightservice.springboot.repository.CodebaseRepository;
 import com.insightservice.springboot.repository.CommitRepository;
 import com.insightservice.springboot.repository.FileObjectRepository;
 import com.insightservice.springboot.utility.HeatCalculationUtility;
+import com.insightservice.springboot.utility.JenkinsAnalyzer;
 import com.insightservice.springboot.utility.RepositoryAnalyzer;
 import com.insightservice.springboot.utility.commit_history.JGitHelper;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -84,18 +85,7 @@ public class RepositoryAnalysisService
 
             //Persist the codebase
             codebase.setGitHubUrl(remoteUrl);
-            LOG.info("Preparing FileObjects for the database...");
-            for (FileObject fileObject : codebase.getActiveFileObjects()) {
-                fileObject.setPathForDatabase(fileObject.getPath().toString());
-                fileObjectRepository.save(fileObject);
-            }
-            LOG.info("Saving Commits to database...");
-            for (Commit commit : codebase.getActiveCommits()) {
-                commitRepository.save(commit);
-            }
-            LOG.info("Saving Codebase to database...");
-            codebaseRepository.save(codebase);
-            LOG.info("All codebase data successfully saved to database.");
+            saveCodebase(codebase);
 
             return codebase;
         }
@@ -105,5 +95,33 @@ public class RepositoryAnalysisService
             if (repositoryAnalyzer != null)
                 repositoryAnalyzer.cleanup();
         }
+    }
+
+    public void attachJenkinsData(Codebase codebase) throws IOException
+    {
+        //TODO: check if new Jenkins builds exist and skip re-calculation if all data is old
+
+        JenkinsAnalyzer.attachJenkinsStackTraceActivityToCodebase(codebase);
+
+        saveCodebase(codebase);
+    }
+
+
+
+    private void saveCodebase(Codebase codebase)
+    {
+        assert codebase.getGitHubUrl() != null;
+
+        LOG.info("Saving FileObjects to database...");
+        for (FileObject fileObject : codebase.getActiveFileObjects()) {
+            fileObjectRepository.save(fileObject);
+        }
+        LOG.info("Saving Commits to database...");
+        for (Commit commit : codebase.getActiveCommits()) {
+            commitRepository.save(commit);
+        }
+        LOG.info("Saving Codebase to database...");
+        codebaseRepository.save(codebase);
+        LOG.info("All codebase data successfully saved to database.");
     }
 }

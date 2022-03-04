@@ -4,6 +4,9 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import org.springframework.boot.jackson.JsonComponent;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.convert.ReadingConverter;
+import org.springframework.data.convert.WritingConverter;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -19,5 +22,27 @@ public class PathSerializer extends JsonSerializer<Path>
     public void serialize(Path path, JsonGenerator jsonGenerator,
                           SerializerProvider serializerProvider) throws IOException {
         jsonGenerator.writeString(path.toString());
+    }
+
+    @WritingConverter
+    enum PathWriterConverter implements Converter<Path, String>
+    {
+        INSTANCE;
+
+        @Override
+        public String convert(Path path) {
+            return path.toString();
+        }
+    }
+
+    @ReadingConverter
+    enum PathReaderConverter implements Converter<String, Path>
+    {
+        INSTANCE;
+
+        @Override
+        public Path convert(String pathString) {
+            return Path.of(pathString);
+        }
     }
 }

@@ -24,11 +24,9 @@ public class FileObject implements RepoTreeNode
 {
     // region Variables
     @Id
-    @JsonIgnore
-    private String pathForDatabase; //TODO maybe remove the below Path var since it doesn't save to the database
-    @Transient
     private Path path;
     private String filename;
+    @JsonIgnore
     private LinkedHashMap<String, HeatObject> commitHashToHeatObjectMap;
     private HeatObject latestHeatObject; //heat levels at the latest commit
     private Set<String> uniqueAuthors;
@@ -59,14 +57,6 @@ public class FileObject implements RepoTreeNode
     }
     // endregion
 
-
-    public String getPathForDatabase() {
-        return pathForDatabase;
-    }
-
-    public void setPathForDatabase(String pathForDatabase) {
-        this.pathForDatabase = pathForDatabase;
-    }
 
     public Path getPath() {
         return path;

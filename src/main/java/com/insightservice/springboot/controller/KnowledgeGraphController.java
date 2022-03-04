@@ -40,8 +40,7 @@ public class KnowledgeGraphController
     {
         String remoteUrl = urlPayload.getGithubUrl();
 
-        LOG.info("Beginning analysis of the repository with URL `"+ remoteUrl +"`...");
-        //Analyze Codebase
+        //Retrieve Codebase
         Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(remoteUrl, USE_DEFAULT_BRANCH);
 
         TreeMap<String, TreeSet<FileObject>> commitContiguityMap = GroupFileObjectUtility.groupByCommit(codebase);
