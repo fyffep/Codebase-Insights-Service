@@ -222,8 +222,7 @@ public class RepositoryAnalyzer {
         return commitList;
     }
 
-    private static String latestCommitHash(List<RevCommit> commitList) throws IOException, GitAPIException
-    {
+    private static String latestCommitHash(List<RevCommit> commitList) throws IOException, GitAPIException {
         //Choose the commit with the latest time value
         Comparator<RevCommit> TIME = Comparator.comparingInt(RevCommit::getCommitTime);
         Optional<RevCommit> optional = commitList.stream().max(TIME);
@@ -288,6 +287,9 @@ public class RepositoryAnalyzer {
         treeWalk.addTree(tree);
         treeWalk.setRecursive(true);
 
+        // Maps a person's email address to a pair
+        // first entry is number of lines they have authored across the codebase
+        // second entry is a set of all files they have worked on
         HashMap<String, Pair<Integer, Set<String>>> personToKnowledge = new HashMap<String, Pair<Integer, Set<String>>>();
 
         // Traverse through the old version of the project until the target file is found.
@@ -298,8 +300,8 @@ public class RepositoryAnalyzer {
                 //Knowledge Collection
                 try {
                     collectKnowledge(personToKnowledge, path);
-                } catch (NullPointerException ignored) {
-
+                } catch (NullPointerException npe) {
+                    npe.printStackTrace();
                 }
             }
         }
@@ -316,16 +318,16 @@ public class RepositoryAnalyzer {
             final RawText rawText = result.getResultContents();
             for (int i = 0; i < rawText.size(); i++) {
                 final String sourceAuthor = result.getSourceAuthor(i).getEmailAddress();
-                if (personToKnowledge.containsKey(sourceAuthor)){
+                if (personToKnowledge.containsKey(sourceAuthor)) {
                     Pair<Integer, Set<String>> oldLinesAndFile = personToKnowledge.get(sourceAuthor);
-                    Pair<Integer, Set<String>> newLinesAndFile = Pair.of(oldLinesAndFile.getFirst()+1, oldLinesAndFile.getSecond());
+                    Pair<Integer, Set<String>> newLinesAndFile = Pair.of(oldLinesAndFile.getFirst() + 1, oldLinesAndFile.getSecond());
                     newLinesAndFile.getSecond().add(path);
-                    personToKnowledge.put(sourceAuthor,newLinesAndFile);
-                }else{
-                    personToKnowledge.put(sourceAuthor,Pair.of(1,new HashSet<>()));
+                    personToKnowledge.put(sourceAuthor, newLinesAndFile);
+                } else {
+                    personToKnowledge.put(sourceAuthor, Pair.of(1, new HashSet<>()));
                 }
             }
-        }catch(GitAPIException gitAPIException){
+        } catch (GitAPIException gitAPIException) {
             gitAPIException.printStackTrace();
         }
 

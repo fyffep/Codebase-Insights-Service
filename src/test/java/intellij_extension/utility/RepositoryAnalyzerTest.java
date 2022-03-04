@@ -43,6 +43,15 @@ public class RepositoryAnalyzerTest {
             RepositoryAnalyzer.attachBranchNameList(codebase);
             codebase.selectDefaultBranch();
             RepositoryAnalyzer.attachCodebaseData(codebase);
+            HashMap<String, Pair<Integer, Set<String>>> knowledgeMap= repositoryAnalyzer.getKnowledge();
+            LOG.info("Knowledge Info Found: ");
+            //Now the Codebase contains all the data it needs
+            for (Map.Entry<String, Pair<Integer, Set<String>>> entry: knowledgeMap.entrySet()){
+                LOG.info(String.format("%s knows %d lines of codebase across %d files", entry.getKey(),
+                        entry.getValue().getFirst(),entry.getValue().getSecond().size()));
+            }
+
+            LOG.info(String.valueOf(knowledgeMap.get("fyffep")));
 
             //Now the Codebase contains all the data it needs
             LOG.info("Heat calculations complete. Number of files: " + codebase.getActiveFileObjects().size());
@@ -65,46 +74,7 @@ public class RepositoryAnalyzerTest {
         //Do not delete cloned test repo
     }
 
-    @Test
-    public void extractKnowledge() throws GitAPIException, IOException
-    {
-        //Obtain file metrics by analyzing the code base
-        RepositoryAnalyzer repositoryAnalyzer = null;
-        try
-        {
-            JGitHelper.cloneRepository(VALID_REMOTE_URL, "master");
-            //Calculate file sizes for every commit
-            repositoryAnalyzer = new RepositoryAnalyzer(VALID_REMOTE_URL);
 
-            HashMap<String, Pair<Integer, Set<String>>> knowledgeMap= repositoryAnalyzer.getKnowledge();
-
-
-            LOG.info("Knowledge Info Found: ");
-            //Now the Codebase contains all the data it needs
-            for (Map.Entry<String, Pair<Integer, Set<String>>> entry: knowledgeMap.entrySet()){
-                LOG.info(String.format("%s knows %d lines of codebase across %d files", entry.getKey(),
-                        entry.getValue().getFirst(),entry.getValue().getSecond().size()));
-            }
-
-            LOG.info(String.valueOf(knowledgeMap.get("fyffep")));
-
-
-        }
-        catch (IOException | GitAPIException e) {
-            e.printStackTrace();
-            LOG.error(e.toString());
-            LOG.error(e.getMessage());
-
-            throw e;
-        }
-        finally
-        {
-            //Close the .git files
-            if (repositoryAnalyzer != null)
-                repositoryAnalyzer.cleanup();
-        }
-        //Do not delete cloned test repo
-    }
 
 
 
