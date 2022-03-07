@@ -26,10 +26,10 @@ public class JenkinsAnalyzer
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     //TEMP
-    static String username = "";
-    static String apiKey = "";
-    static String jenkinsHost = "";
-    static String jobName = "";
+    static String username = "vampire";
+    static String apiKey = "116edd6a084a745d5a1e5d743a338c0bdc";
+    static String jenkinsHost = "https://codebase-insights-rawlins-vampire.snowy.luddy.indiana.edu";
+    static String jobName = "P565-SP21-Patient-Manager";
 
 
     /**
