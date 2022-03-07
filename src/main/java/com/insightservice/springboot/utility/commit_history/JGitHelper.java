@@ -2,16 +2,24 @@ package com.insightservice.springboot.utility.commit_history;
 
 import com.insightservice.springboot.exception.BadBranchException;
 import com.insightservice.springboot.exception.BadUrlException;
+import com.insightservice.springboot.model.codebase.Codebase;
 import org.apache.tomcat.util.http.fileupload.FileUtils;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.MergeResult;
+import org.eclipse.jgit.api.PullCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.RefNotAdvertisedException;
+import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.eclipse.jgit.transport.FetchResult;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.Collection;
+import java.util.Map;
 
 import static com.insightservice.springboot.Constants.*;
 
@@ -128,52 +136,64 @@ public class JGitHelper
         return openLocalRepository(pathToRepository);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-    //UNUSED
-    /*public static Repository openLocalRepository() throws IOException
-    {
-        final String projectRootPath = locateProjectRoot();
-        assert projectRootPath != null;
-
-        FileRepositoryBuilder builder = new FileRepositoryBuilder();
-        return builder
-                .readEnvironment() // scan environment GIT_* variables
-                //.findGitDir() // scan up the file system tree
-                .findGitDir(new File(projectRootPath))
-                .build();
-    }*/
-
-    //UNUSED
     /**
-     * @return the path of the project that the user has open in IntelliJ or null
-     * as a default.
+     * Returns true if the latestCommit of the input
+     * Codebase is actually the latest commit on the remote counterpart.
+     * This is branch-specific and dependent on the Codebase's activeBranch.
+     * @param codebase a codebase that was analyzed on an earlier date and was
+     *                 retrieved from the database.
+     * @return true if the codebase's latestCommit is, in fact, the latest commit.
+     * Returns false for errors, such as the branch not existing on the remote counterpart.
      */
-    /*public static String locateProjectRoot()
+    public static boolean checkIfLatestCommitIsUpToDate(Codebase codebase) throws GitAPIException
     {
-        //Pull the 'project' from CodebaseInsightsToolWindowFactory, and wait until it exists if necessary
-        synchronized (CodebaseInsightsToolWindowFactory.projectSynchronizer) {
-            if (CodebaseInsightsToolWindowFactory.getProject() == null) {
-                try {
-                    //Wait until the 'project' is not-null
-                    CodebaseInsightsToolWindowFactory.projectSynchronizer.wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+        //Validate GitHub url & active branch
+        String remoteUrl = codebase.getGitHubUrl();
+        assert remoteUrl != null;
+        assert !remoteUrl.isBlank();
+        String activeBranch = codebase.getActiveBranch();
+        assert activeBranch != null;
+        assert !activeBranch.isBlank();
+        String codebaseLatestCommit = codebase.getLatestCommitHash();
+        assert codebaseLatestCommit != null;
+        assert !codebaseLatestCommit.isBlank();
 
-                    //Restore interrupted state... (recommended by SonarQube)
-                    Thread.currentThread().interrupt();
-                }
+        //Obtain latest commit hashes from every branch
+        Collection<Ref> refs = Git.lsRemoteRepository()
+                .setRemote(remoteUrl)
+                .call();
+
+        for (Ref ref : refs)
+        {
+            //Sanity checking
+            if (ref.getName() == null || ref.getObjectId() == null)
+            {
+                LOG.error("Ref `"+ref+"` is corrupt.");
+                continue;
+            }
+
+            //If latest remote commit == latest codebase commit, then return true
+            String remoteBranchName = ref.getName();
+            String latestCommitOnBranch = ref.getObjectId().getName();
+            if (remoteBranchName.endsWith(activeBranch))
+            {
+                return codebase.getLatestCommitHash().equals(latestCommitOnBranch);
             }
         }
-        return CodebaseInsightsToolWindowFactory.getProject().getBasePath();
-    }*/
+
+        LOG.error("checkIfLatestCommitIsUpToDate(...) failed. The branch `" + activeBranch + "` does not exist on the remote repository.");
+        return false;
+    }
+
+    /**
+     * This is the equivalent of running "git pull". It works with whatever branch
+     * is currently active for the cloned repo.
+     */
+    public static void updateLocalRepository(String remoteUrl) throws IOException, GitAPIException {
+        try (Repository repository = openLocalRepository(remoteUrl)) {
+            try (Git git = new Git(repository)) {
+                git.pull().call();
+            }
+        }
+    }
 }

@@ -1,8 +1,11 @@
 package com.insightservice.springboot.model.codebase;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.insightservice.springboot.Constants;
 import com.insightservice.springboot.model.file_tree.RepoTreeNode;
 import com.insightservice.springboot.utility.RepositoryAnalyzer;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,13 +23,20 @@ import java.util.Set;
 public class FileObject implements RepoTreeNode
 {
     // region Variables
+    @Id
     private Path path;
     private String filename;
+    @JsonIgnore
     private LinkedHashMap<String, HeatObject> commitHashToHeatObjectMap;
+    private HeatObject latestHeatObject; //heat levels at the latest commit
     private Set<String> uniqueAuthors;
     private Set<String> uniqueAuthorEmails;
     // This would maintain the latest key commit hash added in the map to avoid any traversal again
+    @Transient
+    @JsonIgnore
     private String latestCommitInTreeWalk; // last time this file appeared in the TreeWalk
+    @Transient
+    @JsonIgnore
     private String latestCommitInDiffEntryList; // last time this file appeared in the DiffEntry
     // FIXME implement me properly along with latest commit
     // endregion
@@ -46,6 +56,7 @@ public class FileObject implements RepoTreeNode
         this.latestCommitInDiffEntryList = "";
     }
     // endregion
+
 
     public Path getPath() {
         return path;
@@ -123,6 +134,13 @@ public class FileObject implements RepoTreeNode
         this.latestCommitInTreeWalk = commitHash;
     }
 
+    public HeatObject getLatestHeatObject() {
+        return latestHeatObject;
+    }
+
+    public void setLatestHeatObject(HeatObject latestHeatObject) {
+        this.latestHeatObject = latestHeatObject;
+    }
 
     public String getHeatMetricString(HeatObject heatObject, Constants.HeatMetricOptions heatMetricOption) {
         String text = "";

@@ -9,9 +9,7 @@ import com.insightservice.springboot.model.JenkinsBuild;
 import com.insightservice.springboot.model.codebase.Codebase;
 import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.model.codebase.HeatObject;
-import com.insightservice.springboot.utility.commit_history.JGitHelper;
 import org.apache.http.HttpStatus;
-import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -28,49 +26,10 @@ public class JenkinsAnalyzer
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     //TEMP
-    static String username = "";
-    static String apiKey = "";
-    static String jenkinsHost = "";
-    static String jobName = "";
-
-    //TEMPORARY to help me test
-    public Codebase getDummyCodebase(String branchName) throws GitAPIException, IOException
-    {
-        String remoteUrl = "https://github.com/fyffep/P565-SP21-Patient-Manager";
-
-        //Obtain file metrics by analyzing the code base
-        RepositoryAnalyzer repositoryAnalyzer = null;
-        try
-        {
-            JGitHelper.cloneRepository(remoteUrl, branchName);
-            Codebase codebase = new Codebase();
-
-            //Calculate file sizes for every commit
-            repositoryAnalyzer = new RepositoryAnalyzer(remoteUrl);
-            RepositoryAnalyzer.attachBranchNameList(codebase);
-            codebase.selectDefaultBranch();
-            RepositoryAnalyzer.attachCodebaseData(codebase);
-
-            //Now the Codebase contains all the data it needs
-            LOG.info("Heat calculations complete. Number of files: " + codebase.getActiveFileObjects().size());
-
-            return codebase;
-        }
-        catch (IOException | GitAPIException e) {
-            e.printStackTrace();
-            LOG.error(e.toString());
-            LOG.error(e.getMessage());
-
-            throw e;
-        }
-        finally
-        {
-            //Close the .git files
-            if (repositoryAnalyzer != null)
-                repositoryAnalyzer.cleanup();
-            JGitHelper.removeClonedRepository(remoteUrl);
-        }
-    }
+    static String username = "vampire";
+    static String apiKey = "116edd6a084a745d5a1e5d743a338c0bdc";
+    static String jenkinsHost = "https://codebase-insights-rawlins-vampire.snowy.luddy.indiana.edu";
+    static String jobName = "P565-SP21-Patient-Manager";
 
 
     /**
@@ -296,15 +255,5 @@ public class JenkinsAnalyzer
             }
             throw ex; //else, idk what happened
         }
-    }
-
-
-    public static void main(String[] args) throws IOException, GitAPIException
-    {
-        //Set up Codebase
-        JenkinsAnalyzer jenkinsTestMain = new JenkinsAnalyzer();
-        Codebase codebase = jenkinsTestMain.getDummyCodebase("intentional-bugs");
-
-        attachJenkinsStackTraceActivityToCodebase(codebase);
     }
 }

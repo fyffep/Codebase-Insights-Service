@@ -2,6 +2,7 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repositories/MainBranchOnlyRepo" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/repositories/P565-SP21-Patient-Manager" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/repositories/codebase-insights-intellij" vcs="Git" />
   </component>
