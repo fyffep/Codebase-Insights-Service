@@ -72,6 +72,140 @@
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
                 "GroupDescription": "ECS Security Group",
+                "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": "0",
+            "IpProtocol": "-1",
+            "ToPort": "0"
+          },
+          {
+            "CidrIp": "172.31.0.0/16",
+            "FromPort": "22",
+            "IpProtocol": "tcp",
+            "ToPort": "22"
+          },
+          {
+            "CidrIp": "172.31.0.0/16",
+            "FromPort": "8080",
+            "IpProtocol": "tcp",
+            "ToPort": "8080"
+          },
+          {
+            "CidrIp": "172.31.0.0/16",
+            "FromPort": "8443",
+            "IpProtocol": "tcp",
+            "ToPort": "8443"
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": "9000",
+            "IpProtocol": "tcp",
+            "ToPort": "9000"
+          },
+          {
+            "CidrIp": "172.31.0.0/16",
+            "FromPort": "8311",
+            "IpProtocol": "tcp",
+            "ToPort": "8311"
+          },
+          {
+            "CidrIp": "172.31.0.0/16",
+            "FromPort": "18311",
+            "IpProtocol": "tcp",
+            "ToPort": "18311"
+          },
+          {
+            "CidrIp": "172.31.0.0/16",
+            "FromPort": "5672",
+            "IpProtocol": "tcp",
+            "ToPort": "5672"
+          },
+          {
+            "CidrIp": "172.31.0.0/16",
+            "FromPort": "15672",
+            "IpProtocol": "tcp",
+            "ToPort": "15672"
+          },
+          {
+            "CidrIp": "172.31.0.0/16",
+            "FromPort": "27017",
+            "IpProtocol": "tcp",
+            "ToPort": "27017"
+          },
+          {
+            "CidrIp": "172.31.0.0/16",
+            "FromPort": "5666",
+            "IpProtocol": "tcp",
+            "ToPort": "5666"
+          },
+          {
+            "CidrIp": "172.31.0.0/16",
+            "FromPort": "1099",
+            "IpProtocol": "tcp",
+            "ToPort": "1099"
+          },
+          {
+            "CidrIp": "172.31.0.0/16",
+            "FromPort": "2222",
+            "IpProtocol": "tcp",
+            "ToPort": "2222"
+          },
+          {
+            "CidrIp": "172.31.0.0/16",
+            "FromPort": "8500",
+            "IpProtocol": "tcp",
+            "ToPort": "8500"
+          },
+          {
+            "CidrIp": "172.31.0.0/16",
+            "FromPort": "9950",
+            "IpProtocol": "tcp",
+            "ToPort": "9950"
+          },
+          {
+            "CidrIp": "172.31.0.0/16",
+            "FromPort": "2551",
+            "IpProtocol": "tcp",
+            "ToPort": "2551"
+          },
+          {
+            "CidrIp": "172.31.0.0/16",
+            "FromPort": "2551",
+            "IpProtocol": "udp",
+            "ToPort": "2551"
+          },
+          {
+            "CidrIp": "172.31.0.0/16",
+            "FromPort": "8190",
+            "IpProtocol": "tcp",
+            "ToPort": "8190"
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": "80",
+            "IpProtocol": "tcp",
+            "ToPort": "80"
+          },
+          {
+            "CidrIp": "172.31.0.0/16",
+            "FromPort": "443",
+            "IpProtocol": "tcp",
+            "ToPort": "443"
+          },
+          {
+            "CidrIp": "172.31.0.0/16",
+            "FromPort": "9998",
+            "IpProtocol": "tcp",
+            "ToPort": "9998"
+          },
+          {
+            "CidrIp": "172.31.0.0/16",
+            "FromPort": "32768",
+            "IpProtocol": "tcp",
+            "ToPort": "32768"
+          }
+        ],
                 "VpcId": {
                     "Ref": "VpcId"
                 }
@@ -108,8 +242,8 @@
                     "Ref": "EcsSecurityGroup"
                 },
                 "IpProtocol": "tcp",
-                "FromPort": 31000,
-                "ToPort": 61000,
+                "FromPort": 32768,
+                "ToPort": 65535,
                 "SourceSecurityGroupId": {
                     "Ref": "EcsSecurityGroup"
                 }
@@ -170,6 +304,7 @@
                         ],
                         "PortMappings": [
                             {
+                                "HostPort": 8080,
                                 "ContainerPort": 8080
                             }
                         ]
@@ -185,7 +320,7 @@
         "ECSALB": {
             "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
             "Properties": {
-                "Name": "ECSALB",
+                "Name": "codebase-insights",
                 "Scheme": "internet-facing",
                 "LoadBalancerAttributes": [
                     {
@@ -238,7 +373,7 @@
                     {
                         "Field": "path-pattern",
                         "Values": [
-                            "/"
+                            "*"
                         ]
                     }
                 ],
@@ -258,7 +393,7 @@
                 "HealthCheckTimeoutSeconds": 5,
                 "HealthyThresholdCount": 2,
                 "Name": "ECSTG",
-                "Port": 8080,
+                "Port": 32768,
                 "Protocol": "HTTP",
                 "UnhealthyThresholdCount": 2,
                 "VpcId": {

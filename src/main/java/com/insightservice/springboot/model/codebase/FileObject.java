@@ -28,6 +28,7 @@ public class FileObject implements RepoTreeNode
     private String filename;
     @JsonIgnore
     private LinkedHashMap<String, HeatObject> commitHashToHeatObjectMap;
+    private int degreeOfCouplingHeat;
     private HeatObject latestHeatObject; //heat levels at the latest commit
     private Set<String> uniqueAuthors;
     private Set<String> uniqueAuthorEmails;
@@ -54,6 +55,7 @@ public class FileObject implements RepoTreeNode
         this.uniqueAuthorEmails = new LinkedHashSet<>();
         this.latestCommitInTreeWalk = "";
         this.latestCommitInDiffEntryList = "";
+        this.degreeOfCouplingHeat = 0;
     }
     // endregion
 
@@ -100,6 +102,22 @@ public class FileObject implements RepoTreeNode
 
     public void setLatestCommitInDiffEntryList(String latestCommitInDiffEntryList) {
         this.latestCommitInDiffEntryList = latestCommitInDiffEntryList;
+    }
+
+    public int getDegreeOfCouplingHeat() {
+        return degreeOfCouplingHeat;
+    }
+
+    /**
+     * This method computes degree of external coupling heat based on degreeOfExternalCoupling
+     * derived from group by commit contiguity logic.
+     * If a file forms a group with 10 other files in the codebase which is also the total number of active files,
+     * the file would have MAX HEAT.
+     * @param degreeOfExternalCoupling value for the number of files forming a group with the current.
+     * @param totalExternalFiles value for the total number of active files in the codebase except the current.
+     */
+    public void computeDegreeOfCouplingHeat(int degreeOfExternalCoupling, int totalExternalFiles) {
+        this.degreeOfCouplingHeat = (int) ((degreeOfExternalCoupling * 1.0/totalExternalFiles) * Constants.HEAT_MAX);
     }
 
 

@@ -451,21 +451,9 @@ public class HeatCalculationUtility
 
         //Compute and store overall heat
         Set<FileObject> fileObjectSet = codebase.getActiveFileObjects();
-        for (FileObject fileObject : fileObjectSet)
-        {
+        for (FileObject fileObject : fileObjectSet) {
             LinkedHashMap<String, HeatObject> commitHashToHeatObjectMap = fileObject.getCommitHashToHeatObjectMap();
-            for (Map.Entry<String, HeatObject> commitToHeatObjectEntry : commitHashToHeatObjectMap.entrySet())
-            {
-                //Calculate weighted sum of heat
-                HeatObject heatObject = commitToHeatObjectEntry.getValue();
-                heatObject.setOverallHeat(
-                        (heatObject.getFileSizeHeat() * WEIGHT_FILE_SIZE) +
-                        (heatObject.getNumberOfCommitsHeat() * WEIGHT_NUM_OF_COMMITS) +
-                        (heatObject.getNumberOfAuthorsHeat() * WEIGHT_NUM_OF_AUTHORS) +
-                        (heatObject.getDegreeOfCouplingHeat() * WEIGHT_DEGREE_OF_COUPLING) +
-                        (heatObject.getGoodBadCommitRatioHeat() * WEIGHT_COMMIT_RATIO)
-                );
-            }
+            commitHashToHeatObjectMap.forEach(HeatCalculationUtility::accept);
         }
         LOG.info("Finished calculating overall heat.");
     }
@@ -495,5 +483,16 @@ public class HeatCalculationUtility
     public static void assignHeatLevels(Codebase codebase)
     {
         assignHeatLevelsOverall(codebase);
+    }
+
+    private static void accept(String key, HeatObject heatObject) {
+        //Calculate weighted sum of heat
+        heatObject.setOverallHeat(
+                (heatObject.getFileSizeHeat() * WEIGHT_FILE_SIZE) +
+                        (heatObject.getNumberOfCommitsHeat() * WEIGHT_NUM_OF_COMMITS) +
+                        (heatObject.getNumberOfAuthorsHeat() * WEIGHT_NUM_OF_AUTHORS) +
+                        (heatObject.getDegreeOfCouplingHeat() * WEIGHT_DEGREE_OF_COUPLING) +
+                        (heatObject.getGoodBadCommitRatioHeat() * WEIGHT_COMMIT_RATIO)
+        );
     }
 }

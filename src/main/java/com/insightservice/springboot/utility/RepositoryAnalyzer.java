@@ -158,7 +158,7 @@ public class RepositoryAnalyzer {
                         incrementNumberOfTimesChanged(fileObject, processCommit.getName());
                         // Count the number of authors the file has
                         incrementNumberOfAuthors(fileObject, processCommit);
-                        commitExtract.getFileSet().add(fileName);
+                        commitExtract.addFileToSet(fileName);
                         // Update latest commit for fileObject
                         fileObject.setLatestCommitInDiffEntryList(processCommit.getName());
                         // TODO consider tracking paths per change/commit

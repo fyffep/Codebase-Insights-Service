@@ -43,8 +43,10 @@ public class KnowledgeGraphController
         //Retrieve Codebase
         Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(remoteUrl, USE_DEFAULT_BRANCH);
 
-        TreeMap<String, TreeSet<FileObject>> commitContiguityMap = GroupFileObjectUtility.groupByCommit(codebase);
+        TreeMap<String, TreeSet<FileObject>> commitContiguityMap = codebase.getCommitBasedMapGroup();
+        if (commitContiguityMap.isEmpty()) commitContiguityMap = GroupFileObjectUtility.groupByCommit(codebase);
 
-        return new ResponseEntity<TreeMap<String, TreeSet<FileObject>>>(commitContiguityMap, HttpStatus.OK);
+        codebase.setCommitBasedMapGroup(commitContiguityMap);
+        return new ResponseEntity<>(commitContiguityMap, HttpStatus.OK);
     }
 }
