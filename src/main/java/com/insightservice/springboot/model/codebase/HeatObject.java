@@ -45,7 +45,7 @@ public class HeatObject {
         numberOfAuthors = -1;
     }
 
-    public HeatObject(int heatLevel, String filename, long lineCount, long fileSize, int numberOfCommits, int numberOfAuthors) {
+    public HeatObject(String filename, long lineCount, long fileSize, int numberOfCommits, int numberOfAuthors) {
         fileSizeHeat = Constants.HEAT_MIN;
         numberOfCommitsHeat = Constants.HEAT_MIN;
         numberOfAuthorsHeat = Constants.HEAT_MIN;
