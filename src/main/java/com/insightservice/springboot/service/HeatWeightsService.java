@@ -24,14 +24,14 @@ public class HeatWeightsService
      */
     public HeatWeights storeHeatWeightAdjustments(HeatWeights heatWeightAdjustments)
     {
-        HashMap<HeatMetricOptionsExceptOverall, Double> adjustmentMap =  heatWeightAdjustments.getMetricNameToWeightMap();
+        HashMap<HeatMetricOptionsExceptOverall, Integer> adjustmentMap =  heatWeightAdjustments.getMetricNameToWeightMap();
         if (adjustmentMap == null)
             throw new NullPointerException("A heatWeightAdjustments needs a heat metric to weight adjustment map to be valid.");
 
         //Get or create existing HeatWeights from the DB
         HeatWeights existingHeatWeights = heatWeightsRepository.findById(HeatWeights.SINGLETON_ID)
                 .orElse(new HeatWeights());
-        HashMap<HeatMetricOptionsExceptOverall, Double> weightMapToUpdate = existingHeatWeights.getMetricNameToWeightMap();
+        HashMap<HeatMetricOptionsExceptOverall, Integer> weightMapToUpdate = existingHeatWeights.getMetricNameToWeightMap();
 
         //Validate the adjustments
         for (HeatMetricOptionsExceptOverall metric : HeatMetricOptionsExceptOverall.values())
@@ -47,21 +47,17 @@ public class HeatWeightsService
             }
             else
             {
-                //Assume adjustment is 0
-                adjustmentMap.put(metric, 0.0);
+                adjustmentMap.put(metric, 0); //Assume no adjustment
             }
         }
 
         //Calculate and store the adjustments
         for (HeatMetricOptionsExceptOverall metric : HeatMetricOptionsExceptOverall.values())
         {
-            double oldWeight = weightMapToUpdate.get(metric);
-            double newWeight = oldWeight + adjustmentMap.get(metric);
+            int oldWeight = weightMapToUpdate.get(metric);
+            int newWeight = oldWeight + adjustmentMap.get(metric);
             weightMapToUpdate.put(metric, newWeight);
         }
-
-        //More validation
-        existingHeatWeights.forceToAddUpTo1();
 
         //Now existingHeatWeights's weightMapToUpdate has the new heat weights.
 

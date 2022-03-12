@@ -72,16 +72,17 @@ public class Constants
     // All minima/maxima are inclusive
     public static final int HEAT_MIN = 1;
     public static final int HEAT_MAX = 10;
-    public static final double MIN_WEIGHT_ADJUSTMENT = -0.05;
-    public static final double MAX_WEIGHT_ADJUSTMENT = 0.05;
+    public static final int MIN_WEIGHT_ADJUSTMENT = -100;
+    public static final int MAX_WEIGHT_ADJUSTMENT = 100;
 
     //DEFAULT Heat weights -- the actual heat weights are stored in the DB via the HeatWeights class
-    public static final double WEIGHT_FILE_SIZE = 0.0; //combination of both lineCount and fileSize
-    public static final double WEIGHT_NUM_OF_COMMITS = 0.5;
-    public static final double WEIGHT_NUM_OF_AUTHORS = 0.5;
-    public static final double WEIGHT_DEGREE_OF_COUPLING = 0.0; //to be implemented
-    public static final double WEIGHT_COMMIT_RATIO = 0.0; //to be implemented
-    public static final double WEIGHT_CYCLOMATIC_COMPLEXITY = 0.0; //to be implemented
+    public static final int HEAT_WEIGHT_TOTAL = 1000;
+    public static final int WEIGHT_FILE_SIZE = 0; //combination of both lineCount and fileSize
+    public static final int WEIGHT_NUM_OF_COMMITS = 500;
+    public static final int WEIGHT_NUM_OF_AUTHORS = 500;
+    public static final int WEIGHT_DEGREE_OF_COUPLING = 0; //to be implemented
+    public static final int WEIGHT_COMMIT_RATIO = 0; //to be implemented
+    public static final int WEIGHT_CYCLOMATIC_COMPLEXITY = 0; //to be implemented
 
     public static final String SEPARATOR = "~";
     public static final String NO_FILES_EXIST = "No files exist";

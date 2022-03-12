@@ -8,6 +8,11 @@ import org.springframework.data.annotation.Id;
 import java.util.HashMap;
 
 
+/**
+ * For each heat metric, we assign an integer weight to control how much it contributes to each a file's heat.
+ * There is only one HeatWeights instance for the entire system, and it is storied on the database with ID 0.
+ * The weights may be adjusted through the HashMap<HeatMetricOptionsExceptOverall, Integer> metricNameToWeightMap.
+ */
 public class HeatWeights
 {
     @Id
@@ -15,7 +20,9 @@ public class HeatWeights
     private String singletonId; //always takes value of SINGLETON_ID. The weird syntax here is needed for MongoDB.
     public static final String SINGLETON_ID = "0";
 
-    private HashMap<HeatMetricOptionsExceptOverall, Double> metricNameToWeightMap;
+    //The weights in this map should add up to roughly Constants.HEAT_WEIGHT_TOTAL (i.e. 1000 at the time of writing this)
+    //...but this is not enforced anywhere as a requirement.
+    private HashMap<HeatMetricOptionsExceptOverall, Integer> metricNameToWeightMap;
 
 
     public HeatWeights() {
@@ -28,16 +35,7 @@ public class HeatWeights
         metricNameToWeightMap.put(HeatMetricOptionsExceptOverall.COMMIT_RATIO, Constants.WEIGHT_COMMIT_RATIO);
         metricNameToWeightMap.put(HeatMetricOptionsExceptOverall.CYCLOMATIC_COMPLEXITY, Constants.WEIGHT_CYCLOMATIC_COMPLEXITY);
 
-        //If you fail this, a new heat metric was added but this constructor wasn't updated
-        // TODO make a unit test
-        for (HeatMetricOptionsExceptOverall metric : HeatMetricOptionsExceptOverall.values())
-        {
-            assert metricNameToWeightMap.containsKey(metric);
-        }
-        if (metricNameToWeightMap.keySet().size() != HeatMetricOptionsExceptOverall.values().length)
-            throw new IllegalStateException("Default heat weights were not configured properly");
-
-        forceToAddUpTo1();
+        singletonId = SINGLETON_ID;
     }
 
 
@@ -53,55 +51,18 @@ public class HeatWeights
     /**
      * Always sets the value to HeatWeights.SINGLETON_ID.
      * Only needed for MongoDB.
-     * @param singletonId ignored
+     * @param singletonId IGNORED
      */
     public void setSingletonId(String singletonId) {
         this.singletonId = SINGLETON_ID;
     }
 
-    public HashMap<HeatMetricOptionsExceptOverall, Double> getMetricNameToWeightMap() {
+    public HashMap<HeatMetricOptionsExceptOverall, Integer> getMetricNameToWeightMap() {
         return metricNameToWeightMap;
     }
 
-    public void setMetricNameToWeightMap(HashMap<HeatMetricOptionsExceptOverall, Double> metricNameToWeightMap) {
+    public void setMetricNameToWeightMap(HashMap<HeatMetricOptionsExceptOverall, Integer> metricNameToWeightMap) {
         this.metricNameToWeightMap = metricNameToWeightMap;
     }
     //endregion
-
-
-    public void forceToAddUpTo1()
-    {
-        if (this.getMetricNameToWeightMap().keySet().size() != HeatMetricOptionsExceptOverall.values().length)
-            throw new IllegalStateException("Not every heat metric was mapped to a weight value");
-
-
-        //region Calculate current weightSum and validate current weights
-        double weightSum = 0.0;
-        for (HeatMetricOptionsExceptOverall metric : HeatMetricOptionsExceptOverall.values()) {
-            //Calculate total weightSum
-            weightSum += metricNameToWeightMap.get(metric);
-        }
-        //endregion
-
-        //region Ensure all weights add up to approximately 100% (= 1)
-        if (weightSum < 1.0)
-        {
-            double weightToDistribute = (1.0 - weightSum) / HeatMetricOptionsExceptOverall.values().length;
-            for (HeatMetricOptionsExceptOverall metric : HeatMetricOptionsExceptOverall.values())
-            {
-                double weight = metricNameToWeightMap.get(metric);
-                metricNameToWeightMap.put(metric, weight + weightToDistribute);
-            }
-        }
-        else if (weightSum > 1.0)
-        {
-            double weightToRemove = (weightSum - 1.0) / HeatMetricOptionsExceptOverall.values().length;
-            for (HeatMetricOptionsExceptOverall metric : HeatMetricOptionsExceptOverall.values())
-            {
-                double weight = metricNameToWeightMap.get(metric);
-                metricNameToWeightMap.put(metric, weight - weightToRemove);
-            }
-        }
-        //endregion
-    }
 }
