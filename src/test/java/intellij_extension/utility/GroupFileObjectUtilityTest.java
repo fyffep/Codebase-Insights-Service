@@ -110,20 +110,18 @@ public class GroupFileObjectUtilityTest {
         TreeSet<FileObject> pair3 = new TreeSet<>(FILE_OBJECT_COMPARATOR);
 
         pair1.addAll(Set.of(fileObject1, fileObject4));
-        pair2.addAll(Set.of(fileObject2, fileObject6));
+        pair2.addAll(Set.of(fileObject2, fileObject3, fileObject6));
         pair3.addAll(Set.of(fileObject5));
-
-        for (Map.Entry<String, TreeSet<FileObject>> entry : packageToFileMap.entrySet())
-        {
-            System.out.println("key "+entry.getKey());
-            for (FileObject f : entry.getValue())
-            {
-                System.out.println(f.getFilename());
-            }
-        }
 
         assertTrue(packageToFileMap.containsValue(pair1));
         assertTrue(packageToFileMap.containsValue(pair2));
         assertTrue(packageToFileMap.containsValue(pair3));
+
+        assertEquals(2, fileObject1.getDegreeOfCouplingHeat());
+        assertEquals(4, fileObject2.getDegreeOfCouplingHeat());
+        assertEquals(4, fileObject3.getDegreeOfCouplingHeat());
+        assertEquals(2, fileObject4.getDegreeOfCouplingHeat());
+        assertEquals(0, fileObject5.getDegreeOfCouplingHeat());
+        assertEquals(4, fileObject6.getDegreeOfCouplingHeat());
     }
 }

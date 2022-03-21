@@ -3,6 +3,7 @@ package com.insightservice.springboot.utility;
 import com.insightservice.springboot.model.codebase.Codebase;
 import com.insightservice.springboot.model.codebase.FileObject;
 
+import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -29,7 +30,12 @@ public class GroupFileObjectUtility {
      */
     public static TreeMap<String, TreeSet<FileObject>> groupByCommit(Codebase codebase) {
         HashSet<FileObject> activeFiles = codebase.getActiveFileObjects();
-        TreeMap<String, TreeSet<FileObject>> commitGroupedMap = new TreeMap<>(String::compareTo);
+        TreeMap<String, TreeSet<FileObject>> commitGroupedMap =
+                new TreeMap<>((o1, o2) -> {
+                    int count1 = Integer.parseInt(o1.split(SEPARATOR)[0]);
+                    int count2 = Integer.parseInt(o2.split(SEPARATOR)[0]);
+                    return count1 != count2 ? Integer.compare(count2, count1) : o1.compareTo(o2);
+                });
         TreeSet<FileObject> finalObjects = new TreeSet<>(FILE_OBJECT_COMPARATOR);
 
         // Outer loop for checking top level commits
@@ -56,32 +62,24 @@ public class GroupFileObjectUtility {
             // This is for groups with only a single file
             if (maxCommonCommits == 0) maxCommonCommits = activeFile.getCommitHashToHeatObjectMap().size();
 
+            // Compute degree of external coupling heat
+            assignDegreeOfExternalCoupling(activeFile, fileObjectSetMap, activeFiles.size() - 1);
+
             // Adds to the final list of file objects to maintain the Set of computed File object groups
             finalObjects.addAll(insertGroupsInMap(commitGroupedMap, fileObjectSetMap, maxCommonCommits));
         }
 
+        return commitGroupedMap;
+    }
 
-        //Re-build the TreeMap so that it is sorted by the count (the number of common commits) in descending order
-        TreeMap<String, TreeSet<FileObject>> outputMap = new TreeMap<>((o1, o2) -> {
-            try
-            {
-                int count1 = Integer.parseInt(o1.split(SEPARATOR)[0]);
-                int count2 = Integer.parseInt(o2.split(SEPARATOR)[0]);
+    private static void assignDegreeOfExternalCoupling(
+            FileObject activeFile, LinkedHashMap<FileObject, Set<FileObject>> fileObjectSetMap, int totalExternalFiles) {
+        Set<FileObject> fileObjectSet = fileObjectSetMap.get(activeFile);
+        int degreeOfExternalCoupling = fileObjectSet.size() - 1;
 
-                return -Integer.compare(count1, count2);
-            }
-            catch (ArrayIndexOutOfBoundsException | NumberFormatException ex)
-            {
-                System.err.println("One or more keys in groupByCommit's commitGroupedMap were defined incorrectly. " +
-                        "Expected format: COUNT~HASHCODE where COUNT and HASHCODE are integers");
-
-                throw ex;
-            }
-        });
-        for (Map.Entry<String, TreeSet<FileObject>> entry : commitGroupedMap.entrySet())
-            outputMap.put(entry.getKey(), entry.getValue());
-
-        return outputMap;
+        for (FileObject fileObject: fileObjectSet) {
+            fileObject.computeDegreeOfCouplingHeat(degreeOfExternalCoupling, totalExternalFiles);
+        }
     }
 
     private static LinkedHashMap<FileObject, Set<FileObject>> initObjectSetMap(FileObject activeFile) {

@@ -2,7 +2,7 @@
 repositories/
 
 HELP.md
-target/
+target/*
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
@@ -34,3 +34,9 @@ build/
 
 ### VS Code ###
 .vscode/
+.DS_Store
+.idea/misc.xml
+.idea/misc.xml
+target/classes/com/insightservice/springboot/Main.class
+*.class
+*.class

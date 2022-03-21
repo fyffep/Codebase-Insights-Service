@@ -3,6 +3,9 @@ package com.insightservice.springboot.model.codebase;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.insightservice.springboot.Constants;
 import com.insightservice.springboot.Constants.GroupingMode;
+import com.insightservice.springboot.Constants.HeatMetricOptions;
+import com.insightservice.springboot.utility.GroupFileObjectUtility;
+import com.insightservice.springboot.utility.HeatCalculationUtility;
 import com.insightservice.springboot.utility.RepositoryAnalyzer;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
@@ -11,10 +14,13 @@ import org.springframework.data.mongodb.core.mapping.DBRef;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Codebase
 {
     // region Vars
+    private TreeMap<String, TreeSet<FileObject>> commitBasedMapGroup;
+
     @Id
     private String gitHubUrl;
     @Transient
@@ -37,6 +43,7 @@ public class Codebase
         branchNameList = new LinkedHashSet<>();
         activeCommits = new LinkedHashSet<>();
         activeFileObjects = new LinkedHashSet<>();
+        commitBasedMapGroup = new TreeMap<>();
     }
     // endregion
 
@@ -161,6 +168,28 @@ public class Codebase
 
         return selectedCommit;
     }
+
+    public TreeMap<String, TreeSet<FileObject>> groupDataByCommits() {
+        System.out.println("groupDataByCommits called");
+
+        if (commitBasedMapGroup.isEmpty()) {
+            // Calculate heat based on the selected metric
+            HeatCalculationUtility.assignHeatLevels(this);
+
+            //Group by commit
+            commitBasedMapGroup = GroupFileObjectUtility.groupByCommit(this);
+        }
+        return commitBasedMapGroup;
+    }
+
+    public TreeMap<String, TreeSet<FileObject>> getCommitBasedMapGroup() {
+        return this.commitBasedMapGroup;
+    }
+
+    public void setCommitBasedMapGroup(TreeMap<String, TreeSet<FileObject>> commitBasedMapGroup) {
+        this.commitBasedMapGroup = commitBasedMapGroup;
+    }
+
     // endregion
 
 

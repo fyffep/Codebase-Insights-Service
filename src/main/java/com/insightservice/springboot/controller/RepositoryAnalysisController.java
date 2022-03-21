@@ -6,6 +6,7 @@ import com.insightservice.springboot.payload.UrlPayload;
 import com.insightservice.springboot.service.RepositoryAnalysisService;
 import com.insightservice.springboot.utility.DashboardCalculationUtility;
 import com.insightservice.springboot.utility.FileTreeCreator;
+import com.insightservice.springboot.utility.GroupFileObjectUtility;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,10 @@ public class RepositoryAnalysisController
     @Autowired
     private RepositoryAnalysisService repositoryAnalysisService;
 
+    @GetMapping("/restcheck")
+    public String test() {
+        return "Rest check is working";
+    }
 
     @PostMapping("/initiate")
     public ResponseEntity<?> initiateAnalysis(@RequestBody UrlPayload urlPayload, BindingResult result) throws GitAPIException, IOException
@@ -42,6 +47,7 @@ public class RepositoryAnalysisController
         //Analyze Jenkins data
         LOG.info("Beginning Jenkins analysis of the repository with URL `"+ remoteUrl +"`...");
         repositoryAnalysisService.attachJenkinsData(codebase);
+        codebase.setCommitBasedMapGroup(GroupFileObjectUtility.groupByCommit(codebase));
 
         return new ResponseEntity<Codebase>(codebase, HttpStatus.OK);
     }
