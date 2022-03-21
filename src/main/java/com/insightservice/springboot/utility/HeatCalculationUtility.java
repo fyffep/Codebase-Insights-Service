@@ -459,11 +459,12 @@ public class HeatCalculationUtility
                 //Calculate weighted sum of heat
                 HeatObject heatObject = commitToHeatObjectEntry.getValue();
                 heatObject.setOverallHeat(
-                        (heatObject.getFileSizeHeat() * WEIGHT_FILE_SIZE) +
+                        ((heatObject.getFileSizeHeat() * WEIGHT_FILE_SIZE) +
                         (heatObject.getNumberOfCommitsHeat() * WEIGHT_NUM_OF_COMMITS) +
                         (heatObject.getNumberOfAuthorsHeat() * WEIGHT_NUM_OF_AUTHORS) +
                         (heatObject.getDegreeOfCouplingHeat() * WEIGHT_DEGREE_OF_COUPLING) +
-                        (heatObject.getGoodBadCommitRatioHeat() * WEIGHT_COMMIT_RATIO)
+                        (heatObject.getGoodBadCommitRatioHeat() * WEIGHT_COMMIT_RATIO))
+                    / (double) HEAT_WEIGHT_TOTAL
                 );
             }
         }
