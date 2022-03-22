@@ -20,7 +20,6 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 import org.apache.commons.io.output.NullOutputStream;
 
 import javax.validation.constraints.NotNull;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -241,9 +240,11 @@ public class RepositoryAnalyzer {
 
         // Traverse through the old version of the project until the target file is found.
         while (treeWalk.next()) {
-            // TODO proper file filtering
+            //Ignore files that are excluded by the .gitignore (i.e. they weren't cloned)
             String path = treeWalk.getPathString();
-            if (path.endsWith(".java")) {
+            if (treeWalk.getFileMode().equals(FileMode.REGULAR_FILE) && //if path leads to a file
+                    !GitIgnoreFilter.isIgnored(path)) //if file isn't excluded by default
+            {
 
                 // Get FileObject based on path
                 FileObject fileObject = codeBase.createOrGetFileObjectFromPath(path);
