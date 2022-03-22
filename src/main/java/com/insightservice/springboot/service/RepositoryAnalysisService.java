@@ -3,9 +3,11 @@ package com.insightservice.springboot.service;
 import com.insightservice.springboot.model.codebase.Codebase;
 import com.insightservice.springboot.model.codebase.Commit;
 import com.insightservice.springboot.model.codebase.FileObject;
+import com.insightservice.springboot.payload.SettingsPayload;
 import com.insightservice.springboot.repository.CodebaseRepository;
 import com.insightservice.springboot.repository.CommitRepository;
 import com.insightservice.springboot.repository.FileObjectRepository;
+import com.insightservice.springboot.utility.GroupFileObjectUtility;
 import com.insightservice.springboot.utility.HeatCalculationUtility;
 import com.insightservice.springboot.utility.JenkinsAnalyzer;
 import com.insightservice.springboot.utility.RepositoryAnalyzer;
@@ -97,11 +99,34 @@ public class RepositoryAnalysisService
         }
     }
 
-    public void attachJenkinsData(Codebase codebase) throws IOException
+    public void runCiAnalysis(Codebase codebase, SettingsPayload settingsPayload) throws IOException
+    {
+        String remoteUrl = settingsPayload.getGithubUrl();
+        String ciToolChosen = settingsPayload.getCiToolChosen();
+        if (ciToolChosen.equals("Jenkins"))
+        {
+            //Analyze Jenkins data
+            LOG.info("Beginning Jenkins analysis of the repository with URL `"+ remoteUrl +"`...");
+            this.attachJenkinsData(codebase, settingsPayload.getCiUsername(), settingsPayload.getApiKey(), settingsPayload.getJobUrl());
+            codebase.setCommitBasedMapGroup(GroupFileObjectUtility.groupByCommit(codebase));
+        }
+        else if (ciToolChosen.equals("GitHub Actions"))
+        {
+            //TODO
+            LOG.info("TODO GitHub Actions analysis of the repository with URL `"+ remoteUrl +"`...");
+        }
+        else
+        {
+            LOG.info("Removing CI analysis for the repository with URL `"+ remoteUrl +"`...");
+            //TODO remove CI credentials from the user
+        }
+    }
+
+    public void attachJenkinsData(Codebase codebase, String username, String apiKey, String jobUrl) throws IOException
     {
         //TODO: check if new Jenkins builds exist and skip re-calculation if all data is old
 
-        JenkinsAnalyzer.attachJenkinsStackTraceActivityToCodebase(codebase);
+        JenkinsAnalyzer.attachJenkinsStackTraceActivityToCodebase(codebase, username, apiKey, jobUrl);
 
         saveCodebase(codebase);
     }

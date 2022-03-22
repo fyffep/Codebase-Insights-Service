@@ -3,7 +3,7 @@ package com.insightservice.springboot.controller;
 
 import com.google.gson.Gson;
 import com.insightservice.springboot.model.sonar.Issue;
-import com.insightservice.springboot.payload.UrlPayload;
+import com.insightservice.springboot.payload.SettingsPayload;
 
 import com.insightservice.springboot.service.SonarQubeService;
 import org.springframework.http.HttpStatus;
@@ -22,7 +22,7 @@ public class SonarQubeController {
 
 
     @GetMapping("/issues")
-    public ResponseEntity<?> getAllIssues(@RequestBody UrlPayload urlPayload, BindingResult result) throws IOException {
+    public ResponseEntity<?> getAllIssues(@RequestBody SettingsPayload urlPayload, BindingResult result) throws IOException {
 
         String project = urlPayload.getGithubUrl();
         HashMap<String, Integer> componentIssueCount = new HashMap<>();

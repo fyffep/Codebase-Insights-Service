@@ -2,10 +2,8 @@ package com.insightservice.springboot.controller;
 
 import com.insightservice.springboot.model.codebase.Codebase;
 import com.insightservice.springboot.model.codebase.FileObject;
-import com.insightservice.springboot.model.file_tree.RepoPackage;
-import com.insightservice.springboot.payload.UrlPayload;
+import com.insightservice.springboot.payload.SettingsPayload;
 import com.insightservice.springboot.service.RepositoryAnalysisService;
-import com.insightservice.springboot.utility.FileTreeCreator;
 import com.insightservice.springboot.utility.GroupFileObjectUtility;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +19,6 @@ import java.io.IOException;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import static com.insightservice.springboot.Constants.LOG;
 import static com.insightservice.springboot.Constants.USE_DEFAULT_BRANCH;
 
 @RestController
@@ -36,7 +33,7 @@ public class KnowledgeGraphController
      * Returns a tree structure of files for a Codebase with a RepoPackage as its root.
      */
     @PostMapping("/group-by-commit-contiguity")
-    public ResponseEntity<?> performCodebaseAnalysisByCommitContiguity(@RequestBody UrlPayload urlPayload, BindingResult result) throws GitAPIException, IOException
+    public ResponseEntity<?> performCodebaseAnalysisByCommitContiguity(@RequestBody SettingsPayload urlPayload, BindingResult result) throws GitAPIException, IOException
     {
         String remoteUrl = urlPayload.getGithubUrl();
 
