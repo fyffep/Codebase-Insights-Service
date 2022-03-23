@@ -5,6 +5,7 @@ import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.payload.SettingsPayload;
 import com.insightservice.springboot.service.RepositoryAnalysisService;
 import com.insightservice.springboot.utility.GroupFileObjectUtility;
+import com.insightservice.springboot.utility.RepositoryAnalyzer;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -33,9 +34,9 @@ public class KnowledgeGraphController
      * Returns a tree structure of files for a Codebase with a RepoPackage as its root.
      */
     @PostMapping("/group-by-commit-contiguity")
-    public ResponseEntity<?> performCodebaseAnalysisByCommitContiguity(@RequestBody SettingsPayload urlPayload, BindingResult result) throws GitAPIException, IOException
+    public ResponseEntity<?> performCodebaseAnalysisByCommitContiguity(@RequestBody SettingsPayload settingsPayload, BindingResult result) throws GitAPIException, IOException
     {
-        String remoteUrl = urlPayload.getGithubUrl();
+        String remoteUrl = settingsPayload.getGithubUrl();
 
         //Retrieve Codebase
         Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(remoteUrl, USE_DEFAULT_BRANCH);
@@ -45,5 +46,18 @@ public class KnowledgeGraphController
 
         codebase.setCommitBasedMapGroup(commitContiguityMap);
         return new ResponseEntity<>(commitContiguityMap, HttpStatus.OK);
+    }
+
+
+    /**
+     * Returns a tree structure of files for a Codebase with a RepoPackage as its root.
+     */
+    @PostMapping("/graph")
+    public ResponseEntity<?> getKnowledgeGraph(@RequestBody SettingsPayload settingsPayload, BindingResult result) throws GitAPIException, IOException
+    {
+        String remoteUrl = settingsPayload.getGithubUrl();
+        RepositoryAnalyzer repositoryAnalyzer = new RepositoryAnalyzer(remoteUrl);
+
+        return new ResponseEntity<>(repositoryAnalyzer.getKnowledge(), HttpStatus.OK);
     }
 }
