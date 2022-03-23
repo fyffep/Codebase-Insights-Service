@@ -4,6 +4,9 @@ import com.insightservice.springboot.model.codebase.Codebase;
 import com.insightservice.springboot.model.codebase.Commit;
 import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.model.codebase.HeatObject;
+import com.insightservice.springboot.model.knowledge.Contributor;
+import com.insightservice.springboot.model.knowledge.ContributorLink;
+import com.insightservice.springboot.model.knowledge.KnowledgeGraph;
 import com.insightservice.springboot.utility.commit_history.JGitHelper;
 import com.insightservice.springboot.utility.filesize.FileSizeCalculator;
 import org.eclipse.jgit.api.BlameCommand;
@@ -333,6 +336,52 @@ public class RepositoryAnalyzer {
         }
 
     }
+
+    public KnowledgeGraph getKnowledgeGraph() throws IOException
+    {
+        //Analyze codebase for knowledge
+        HashMap<String, Pair<Integer, Set<String>>> linesAndFilePathsKnownPerAuthorMap = getKnowledge();
+
+        //Create KnowledgeGraph
+        KnowledgeGraph knowledgeGraph = new KnowledgeGraph();
+        int sourceAuthorId = 0;
+        for (String authorEmail : linesAndFilePathsKnownPerAuthorMap.keySet())
+        {
+            //Record contributor
+            int knowledgeScore = linesAndFilePathsKnownPerAuthorMap.get(authorEmail).getFirst();
+            knowledgeGraph.addContributor(new Contributor(sourceAuthorId, authorEmail, knowledgeScore));
+
+            //Iterate through the files the source author knows
+            for (String filePath : linesAndFilePathsKnownPerAuthorMap.get(authorEmail).getSecond())
+            {
+                //String fileName = getFilename(filePath);
+
+                //Iterate through other authors and their files known
+                int targetAuthorId = 0;
+                for (String otherAuthorEmail : linesAndFilePathsKnownPerAuthorMap.keySet())
+                {
+                    if (!authorEmail.equals(otherAuthorEmail))
+                    {
+                        for (String otherFilePath : linesAndFilePathsKnownPerAuthorMap.get(otherAuthorEmail).getSecond())
+                        {
+                            //Both authors know the same file
+                            if (filePath.equals(otherFilePath))
+                            {
+                                knowledgeGraph.setLink(sourceAuthorId, targetAuthorId);
+                                //System.out.println(authorEmail+" knows "+otherAuthorEmail+" because of file "+filePath);
+                            }
+                        }
+                    }
+                    targetAuthorId++;
+                }
+            }
+            sourceAuthorId++;
+        }
+        return knowledgeGraph;
+    }
+
+
+
 
     private static void transferHeatMetricsFromLatestToCurrent(FileObject fileObject, RevCommit processCommit) {
         String previousCommitHashId = fileObject.getLatestCommitInTreeWalk();
