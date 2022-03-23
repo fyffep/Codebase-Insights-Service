@@ -6,10 +6,14 @@ import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.model.codebase.HeatObject;
 import com.insightservice.springboot.utility.commit_history.JGitHelper;
 import com.insightservice.springboot.utility.filesize.FileSizeCalculator;
+import org.eclipse.jgit.api.BlameCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.blame.BlameResult;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
+import org.eclipse.jgit.diff.RawText;
+import org.eclipse.jgit.diff.RawTextComparator;
 import org.eclipse.jgit.lib.*;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
@@ -18,6 +22,7 @@ import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.apache.commons.io.output.NullOutputStream;
+import org.springframework.data.util.Pair;
 
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
@@ -216,8 +221,7 @@ public class RepositoryAnalyzer {
         return commitList;
     }
 
-    private static String latestCommitHash(List<RevCommit> commitList) throws IOException, GitAPIException
-    {
+    private static String latestCommitHash(List<RevCommit> commitList) throws IOException, GitAPIException {
         //Choose the commit with the latest time value
         Comparator<RevCommit> TIME = Comparator.comparingInt(RevCommit::getCommitTime);
         Optional<RevCommit> optional = commitList.stream().max(TIME);
@@ -271,6 +275,63 @@ public class RepositoryAnalyzer {
                 }
             }
         }
+
+
+    }
+
+    public HashMap<String, Pair<Integer, Set<String>>> getKnowledge() throws IOException {
+        // Prepare a TreeWalk that can walk through the version of the repo at revCommit
+        RevWalk walk = new RevWalk(git.getRepository());
+        RevCommit commit = walk.parseCommit(git.getRepository().findRef("HEAD").getObjectId());
+        RevTree tree = walk.parseTree(commit.getTree().getId());
+        TreeWalk treeWalk = new TreeWalk(git.getRepository());
+        treeWalk.addTree(tree);
+        treeWalk.setRecursive(true);
+
+        // Maps a person's email address to a pair
+        // first entry is number of lines they have authored across the codebase
+        // second entry is a set of all files they have worked on
+        HashMap<String, Pair<Integer, Set<String>>> personToKnowledge = new HashMap<String, Pair<Integer, Set<String>>>();
+
+        // Traverse through the old version of the project until the target file is found.
+        while (treeWalk.next()) {
+            // TODO proper file filtering, same as process heat metrics method
+            String path = treeWalk.getPathString();
+            if (path.endsWith(".java")) {
+                //Knowledge Collection
+                try {
+                    collectKnowledge(personToKnowledge, path);
+                } catch (NullPointerException npe) {
+                    npe.printStackTrace();
+                }
+            }
+        }
+
+        return personToKnowledge;
+    }
+
+    private static void collectKnowledge(HashMap<String, Pair<Integer, Set<String>>> personToKnowledge, String path) {
+        try {
+            BlameCommand blamer = new BlameCommand(git.getRepository());
+            blamer.setFilePath(path);
+            blamer.setTextComparator(RawTextComparator.WS_IGNORE_ALL);
+            final BlameResult result = blamer.call();
+            final RawText rawText = result.getResultContents();
+            for (int i = 0; i < rawText.size(); i++) {
+                final String sourceAuthor = result.getSourceAuthor(i).getEmailAddress();
+                if (personToKnowledge.containsKey(sourceAuthor)) {
+                    Pair<Integer, Set<String>> oldLinesAndFile = personToKnowledge.get(sourceAuthor);
+                    Pair<Integer, Set<String>> newLinesAndFile = Pair.of(oldLinesAndFile.getFirst() + 1, oldLinesAndFile.getSecond());
+                    newLinesAndFile.getSecond().add(path);
+                    personToKnowledge.put(sourceAuthor, newLinesAndFile);
+                } else {
+                    personToKnowledge.put(sourceAuthor, Pair.of(1, new HashSet<>()));
+                }
+            }
+        } catch (GitAPIException gitAPIException) {
+            gitAPIException.printStackTrace();
+        }
+
     }
 
     private static void transferHeatMetricsFromLatestToCurrent(FileObject fileObject, RevCommit processCommit) {

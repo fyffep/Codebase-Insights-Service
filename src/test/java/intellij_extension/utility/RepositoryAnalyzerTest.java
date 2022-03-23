@@ -7,8 +7,12 @@ import com.insightservice.springboot.utility.RepositoryAnalyzer;
 import com.insightservice.springboot.utility.commit_history.JGitHelper;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.Test;
+import org.springframework.data.util.Pair;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 import static com.insightservice.springboot.Constants.LOG;
 import static org.junit.jupiter.api.Assertions.*;
@@ -39,6 +43,15 @@ public class RepositoryAnalyzerTest {
             RepositoryAnalyzer.attachBranchNameList(codebase);
             codebase.selectDefaultBranch();
             RepositoryAnalyzer.attachCodebaseData(codebase);
+            HashMap<String, Pair<Integer, Set<String>>> knowledgeMap= repositoryAnalyzer.getKnowledge();
+            LOG.info("Knowledge Info Found: ");
+            //Now the Codebase contains all the data it needs
+            for (Map.Entry<String, Pair<Integer, Set<String>>> entry: knowledgeMap.entrySet()){
+                LOG.info(String.format("%s knows %d lines of codebase across %d files", entry.getKey(),
+                        entry.getValue().getFirst(),entry.getValue().getSecond().size()));
+            }
+
+            LOG.info(String.valueOf(knowledgeMap.get("fyffep")));
 
             //Now the Codebase contains all the data it needs
             LOG.info("Heat calculations complete. Number of files: " + codebase.getActiveFileObjects().size());
@@ -60,6 +73,8 @@ public class RepositoryAnalyzerTest {
         }
         //Do not delete cloned test repo
     }
+
+
 
 
 
