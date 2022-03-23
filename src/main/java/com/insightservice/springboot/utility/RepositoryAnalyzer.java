@@ -347,15 +347,20 @@ public class RepositoryAnalyzer {
         int sourceAuthorId = 0;
         for (String authorEmail : linesAndFilePathsKnownPerAuthorMap.keySet())
         {
-            //Record contributor
+            //Create Contributor object for author
             int knowledgeScore = linesAndFilePathsKnownPerAuthorMap.get(authorEmail).getFirst();
-            knowledgeGraph.addContributor(new Contributor(sourceAuthorId, authorEmail, knowledgeScore));
+            Contributor contributor = new Contributor(sourceAuthorId, authorEmail, knowledgeScore);
+            knowledgeGraph.addContributor(contributor);
+
+            //Record files they know
+            HashSet<String> fileNamesKnown = new HashSet<>();
+            for (String filePathKnown : linesAndFilePathsKnownPerAuthorMap.get(authorEmail).getSecond())
+                fileNamesKnown.add(getFilename(filePathKnown)); //convert file path to file name
+            contributor.setFilesKnown(fileNamesKnown);
 
             //Iterate through the files the source author knows
             for (String filePath : linesAndFilePathsKnownPerAuthorMap.get(authorEmail).getSecond())
             {
-                //String fileName = getFilename(filePath);
-
                 //Iterate through other authors and their files known
                 int targetAuthorId = 0;
                 for (String otherAuthorEmail : linesAndFilePathsKnownPerAuthorMap.keySet())
