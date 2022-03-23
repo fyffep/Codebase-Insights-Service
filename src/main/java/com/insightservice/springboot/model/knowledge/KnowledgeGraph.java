@@ -4,10 +4,29 @@ import java.util.ArrayList;
 
 public class KnowledgeGraph
 {
+    private int totalLinesInCodebase; //the sum of knowledge scores for all authors in the codebase
+    private int totalFilesInCodebase; //how many files are in the codebase
     private ArrayList<Contributor> contributorList = new ArrayList<>();
     private ArrayList<ContributorLink> links = new ArrayList<>();
 
     public KnowledgeGraph() {
+    }
+
+
+    public int getTotalLinesInCodebase() {
+        return totalLinesInCodebase;
+    }
+
+    public void setTotalLinesInCodebase(int totalLinesInCodebase) {
+        this.totalLinesInCodebase = totalLinesInCodebase;
+    }
+
+    public int getTotalFilesInCodebase() {
+        return totalFilesInCodebase;
+    }
+
+    public void setTotalFilesInCodebase(int totalFilesInCodebase) {
+        this.totalFilesInCodebase = totalFilesInCodebase;
     }
 
     /**

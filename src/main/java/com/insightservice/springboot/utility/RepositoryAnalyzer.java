@@ -358,6 +358,9 @@ public class RepositoryAnalyzer {
                 fileNamesKnown.add(getFilename(filePathKnown)); //convert file path to file name
             contributor.setFilesKnown(fileNamesKnown);
 
+            //Add to totalLinesInCodebase sum
+            knowledgeGraph.setTotalLinesInCodebase(knowledgeScore + knowledgeGraph.getTotalLinesInCodebase());
+
             //Iterate through the files the source author knows
             for (String filePath : linesAndFilePathsKnownPerAuthorMap.get(authorEmail).getSecond())
             {
@@ -382,6 +385,13 @@ public class RepositoryAnalyzer {
             }
             sourceAuthorId++;
         }
+
+        //Calculate count of totalFilesInCodebase
+        Set<String> filePathSet = new HashSet<>();
+        for (Pair<Integer, Set<String>> lineCountAndFilePathPair : linesAndFilePathsKnownPerAuthorMap.values())
+            filePathSet.addAll(lineCountAndFilePathPair.getSecond());
+        knowledgeGraph.setTotalFilesInCodebase(filePathSet.size() + knowledgeGraph.getTotalFilesInCodebase());
+
         return knowledgeGraph;
     }
 
