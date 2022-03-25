@@ -377,11 +377,13 @@ public class HeatCalculationUtility
     private static void accept(String key, HeatObject heatObject) {
         //Calculate weighted sum of heat
         heatObject.setOverallHeat(
-                (heatObject.getFileSizeHeat() * WEIGHT_FILE_SIZE) +
-                        (heatObject.getNumberOfCommitsHeat() * WEIGHT_NUM_OF_COMMITS) +
-                        (heatObject.getNumberOfAuthorsHeat() * WEIGHT_NUM_OF_AUTHORS) +
-                        (heatObject.getDegreeOfCouplingHeat() * WEIGHT_DEGREE_OF_COUPLING) +
-                        (heatObject.getGoodBadCommitRatioHeat() * WEIGHT_COMMIT_RATIO)
+                (
+                    (heatObject.getFileSizeHeat() * WEIGHT_FILE_SIZE) +
+                    (heatObject.getNumberOfCommitsHeat() * WEIGHT_NUM_OF_COMMITS) +
+                    (heatObject.getNumberOfAuthorsHeat() * WEIGHT_NUM_OF_AUTHORS) +
+                    (heatObject.getDegreeOfCouplingHeat() * WEIGHT_DEGREE_OF_COUPLING) +
+                    (heatObject.getGoodBadCommitRatioHeat() * WEIGHT_COMMIT_RATIO)
+                ) / (double) HEAT_WEIGHT_TOTAL
         );
     }
 }
