@@ -25,34 +25,6 @@ public class RepositoryAnalysisServiceTest
     RepositoryAnalysisService repositoryAnalysisService;
 
 
-    //region cloneRemoteRepository tests
-    @Test
-    public void cloneRemoteRepository_ValidUrl_ValidBranch()
-    {
-        assertDoesNotThrow(() ->{
-            repositoryAnalysisService.cloneRemoteRepository(VALID_REMOTE_URL, MASTER_BRANCH);
-        });
-    }
-
-    @Test
-    public void cloneRemoteRepository_ValidUrl_BogusBranch()
-    {
-        assertThrows(BadBranchException.class, () -> {
-            repositoryAnalysisService.cloneRemoteRepository(VALID_REMOTE_URL, BOGUS_BRANCH);
-        });
-    }
-
-    @Test
-    public void cloneRemoteRepository_PrivateUrl_ValidBranch()
-    {
-        assertThrows(BadUrlException.class, () -> {
-            repositoryAnalysisService.cloneRemoteRepository(PRIVATE_REMOTE_URL, BOGUS_BRANCH);
-        });
-    }
-    //endregion
-
-
-
     //region extractDataToCodebase tests
     @Test
     public void extractDataToCodebase_ValidUrl_MainBranch()

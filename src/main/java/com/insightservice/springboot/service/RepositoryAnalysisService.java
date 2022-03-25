@@ -31,14 +31,11 @@ public class RepositoryAnalysisService
     @Autowired
     CommitRepository commitRepository;
 
-    public void cloneRemoteRepository(String remoteUrl, String branchName) throws GitAPIException, IOException
-    {
-        JGitHelper.cloneRepository(remoteUrl, branchName);
-    }
-
 
     public Codebase getOrCreateCodebase(String remoteUrl, String branchName) throws GitAPIException, IOException
     {
+        //TODO need to call runCiAnalysis here for codemap or refuse to begin analysis from here (and wait for an analyze/initiate request to finish)
+
         Codebase codebase = codebaseRepository.findById(remoteUrl).orElse(null);
         //If codebase is new OR
         //if branch changed OR
@@ -71,7 +68,7 @@ public class RepositoryAnalysisService
         RepositoryAnalyzer repositoryAnalyzer = null;
         try
         {
-            this.cloneRemoteRepository(remoteUrl, branchName);
+            JGitHelper.cloneOrUpdateRepository(remoteUrl, branchName);
             Codebase codebase = new Codebase();
 
             //Calculate heat metrics for every commit

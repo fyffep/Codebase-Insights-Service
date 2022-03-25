@@ -50,6 +50,9 @@ public class GitIgnoreFilter
             if (filePath.contains(extensionToIgnore))
                 return true;
         }
+        if (!filePath.contains(".")) //FIXME this is just a quick fix to ignore directories
+            return  true;
+
         return false;
     }
 }

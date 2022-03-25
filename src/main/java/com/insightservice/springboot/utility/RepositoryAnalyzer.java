@@ -5,7 +5,6 @@ import com.insightservice.springboot.model.codebase.Commit;
 import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.model.codebase.HeatObject;
 import com.insightservice.springboot.model.knowledge.Contributor;
-import com.insightservice.springboot.model.knowledge.ContributorLink;
 import com.insightservice.springboot.model.knowledge.KnowledgeGraph;
 import com.insightservice.springboot.utility.commit_history.JGitHelper;
 import com.insightservice.springboot.utility.filesize.FileSizeCalculator;
@@ -146,8 +145,7 @@ public class RepositoryAnalyzer {
                 for (DiffEntry diffEntry : diffs) {
                     // Get file id (aka path)
                     String newFilePath = diffEntry.getNewPath();
-                    // TODO proper file filtering
-                    if (newFilePath.endsWith(".java")) {
+                    if (!GitIgnoreFilter.isIgnored(newFilePath)) {
                         // Get filename from diffEntry's path
                         String fileName = getFilename(newFilePath);
 
@@ -298,9 +296,8 @@ public class RepositoryAnalyzer {
 
         // Traverse through the old version of the project until the target file is found.
         while (treeWalk.next()) {
-            // TODO proper file filtering, same as process heat metrics method
             String path = treeWalk.getPathString();
-            if (path.endsWith(".java")) {
+            if (!GitIgnoreFilter.isIgnored(path)) {
                 //Knowledge Collection
                 try {
                     collectKnowledge(personToKnowledge, path);
@@ -422,6 +419,18 @@ public class RepositoryAnalyzer {
         processHeatObject.setFileSize(previousHeatObject.getFileSize());
         processHeatObject.setNumberOfCommits(previousHeatObject.getNumberOfCommits());
         processHeatObject.setNumberOfAuthors(previousHeatObject.getNumberOfAuthors());
+
+
+
+        //FIXME: QUICK TEMP FIX FOR NEGATIVE COMMIT & AUTHOR COUNTS ON JS FILES
+        /*if (processHeatObject.getNumberOfAuthors() <= 0) {
+            LOG.error(fileObject.getFilename()+" had a negative author count! Fixing this.");
+            processHeatObject.setNumberOfAuthors(1);
+        }
+        if (processHeatObject.getNumberOfCommits() <= 0) {
+            LOG.error(fileObject.getFilename()+" had a negative commit count! Fixing this.");
+            processHeatObject.setNumberOfCommits(1);
+        }*/
     }
 
     private static void updateLineCountAndFileSizeMetrics(@NotNull TreeWalk treeWalk, @NotNull FileObject fileObject, String commitHash) throws IOException {
