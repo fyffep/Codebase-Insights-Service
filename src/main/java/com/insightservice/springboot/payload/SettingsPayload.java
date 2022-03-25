@@ -11,7 +11,7 @@ public class SettingsPayload
     @NotBlank
     private String githubUrl;
     @NotBlank
-    private String branchName;
+    private String branchName = "";
     @NotBlank
     private String githubOAuthToken;
     @NotBlank

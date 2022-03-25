@@ -243,10 +243,30 @@ public class JGitHelper
      * is currently active for the cloned repo.
      */
     public static void updateLocalRepository(String remoteUrl) throws IOException, GitAPIException {
+        LOG.info("Pulling the latest changes for `"+remoteUrl+"`...");
         try (Repository repository = openLocalRepository(remoteUrl)) {
             try (Git git = new Git(repository)) {
                 git.pull().call();
             }
+        }
+    }
+
+    /**
+     * Tries to do a git pull to get the latest changes.
+     * If that fails, clones the latest version of the repo.
+     */
+    public static void cloneOrUpdateRepository(String remoteUrl, String branchName) throws GitAPIException, IOException
+    {
+        try
+        {
+            //Try to pull
+            JGitHelper.updateLocalRepository(remoteUrl);
+        }
+        catch (IOException | GitAPIException ex)
+        {
+            //Fresh clone
+            LOG.info("git pull failed for repo with URL `"+remoteUrl+"`. Cloning is necessary.");
+            JGitHelper.cloneRepository(remoteUrl, branchName);
         }
     }
 }

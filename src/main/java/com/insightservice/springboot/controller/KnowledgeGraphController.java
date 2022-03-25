@@ -2,10 +2,11 @@ package com.insightservice.springboot.controller;
 
 import com.insightservice.springboot.model.codebase.Codebase;
 import com.insightservice.springboot.model.codebase.FileObject;
+import com.insightservice.springboot.model.knowledge.KnowledgeGraph;
 import com.insightservice.springboot.payload.SettingsPayload;
+import com.insightservice.springboot.service.KnowledgeGraphService;
 import com.insightservice.springboot.service.RepositoryAnalysisService;
 import com.insightservice.springboot.utility.GroupFileObjectUtility;
-import com.insightservice.springboot.utility.RepositoryAnalyzer;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,7 @@ import java.io.IOException;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import static com.insightservice.springboot.Constants.LOG;
 import static com.insightservice.springboot.Constants.USE_DEFAULT_BRANCH;
 
 @RestController
@@ -28,6 +30,9 @@ public class KnowledgeGraphController
 {
     @Autowired
     RepositoryAnalysisService repositoryAnalysisService;
+
+    @Autowired
+    KnowledgeGraphService knowledgeGraphService;
 
 
     /**
@@ -55,9 +60,9 @@ public class KnowledgeGraphController
     @PostMapping("/graph")
     public ResponseEntity<?> getKnowledgeGraph(@RequestBody SettingsPayload settingsPayload, BindingResult result) throws GitAPIException, IOException
     {
-        String remoteUrl = settingsPayload.getGithubUrl();
-        RepositoryAnalyzer repositoryAnalyzer = new RepositoryAnalyzer(remoteUrl);
+        KnowledgeGraph knowledgeGraph = knowledgeGraphService.getKnowledgeGraph(settingsPayload.getGithubUrl(), settingsPayload.getBranchName());
+        LOG.info("Finished creating the Knowledge Graph for repo `"+settingsPayload.getGithubUrl()+"`");
 
-        return new ResponseEntity<>(repositoryAnalyzer.getKnowledgeGraph(), HttpStatus.OK);
+        return new ResponseEntity<>(knowledgeGraph, HttpStatus.OK);
     }
 }
