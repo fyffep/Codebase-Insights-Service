@@ -70,7 +70,7 @@ public class RepositoryAnalysisController
         String remoteUrl = urlPayload.getGithubUrl();
 
         //Retrieve codebase
-        Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(remoteUrl, USE_DEFAULT_BRANCH);
+        Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(remoteUrl, urlPayload.getBranchName());
 
         //Format the files present on the latest commit into a tree structure
         RepoPackage fileTree = FileTreeCreator.createFileTree(
