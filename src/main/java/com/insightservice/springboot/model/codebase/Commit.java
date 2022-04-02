@@ -20,7 +20,6 @@ import java.util.Set;
  * <p>
  * <p>
  * No setters b/c once the commit is built... that's it. Nothing should change after that.
- * TODO - Where do DiffEntries come from?
  **/
 public class Commit {
 

@@ -58,7 +58,6 @@ public class JGitHelper
     {
         //Make a dir for the cloned repo
         File directory = getPathOfLocalRepository(remoteUrl);
-        //TODO the repo shouldn't be deleted if it the branch being used is the same. Need to figure out how to check current branch & pull.
         if (directory.exists())
             FileUtils.deleteDirectory(directory);
         directory.mkdirs();

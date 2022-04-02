@@ -65,7 +65,6 @@ public class RepositoryAnalyzer {
      * Closes the open local Git repository, allowing
      * the files to be deleted. Further methods in this class
      * are likely to fail after cleanup.
-     * FIXME no one wants to remember to call a cleanup method.
      */
     public void cleanup() {
         git.getRepository().close();

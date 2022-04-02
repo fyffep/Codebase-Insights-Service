@@ -39,7 +39,6 @@ public class FileObject implements RepoTreeNode
     @Transient
     @JsonIgnore
     private String latestCommitInDiffEntryList; // last time this file appeared in the DiffEntry
-    // FIXME implement me properly along with latest commit
     // endregion
 
     // region Constructors

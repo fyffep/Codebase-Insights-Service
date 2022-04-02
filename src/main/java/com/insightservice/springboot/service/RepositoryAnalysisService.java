@@ -34,8 +34,6 @@ public class RepositoryAnalysisService
 
     public Codebase getOrCreateCodebase(String remoteUrl, String branchName) throws GitAPIException, IOException
     {
-        //TODO need to call runCiAnalysis here for codemap or refuse to begin analysis from here (and wait for an analyze/initiate request to finish)
-
         Codebase codebase = codebaseRepository.findById(remoteUrl).orElse(null);
         //If codebase is new OR
         //if branch changed OR
@@ -77,6 +75,8 @@ public class RepositoryAnalysisService
             codebase.selectDefaultBranch();
             RepositoryAnalyzer.attachCodebaseData(codebase);
 
+            //TODO run SonarQube here
+
             HeatCalculationUtility.assignHeatLevels(codebase);
 
             //Now the Codebase contains all the data it needs
@@ -109,13 +109,13 @@ public class RepositoryAnalysisService
         }
         else if (ciToolChosen.equals("GitHub Actions"))
         {
-            //TODO
+            //TODO GitHub Actions logic
             LOG.info("TODO GitHub Actions analysis of the repository with URL `"+ remoteUrl +"`...");
         }
         else
         {
             LOG.info("Removing CI analysis for the repository with URL `"+ remoteUrl +"`...");
-            //TODO remove CI credentials from the user
+            //TODO remove CI credentials from the User, then save User to DB
         }
     }
 
