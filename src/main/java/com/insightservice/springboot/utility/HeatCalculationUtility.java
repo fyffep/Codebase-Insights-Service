@@ -5,7 +5,6 @@ import com.insightservice.springboot.model.codebase.Codebase;
 import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.model.codebase.HeatObject;
 
-import java.awt.*;
 import java.util.*;
 
 import static com.insightservice.springboot.Constants.*;
@@ -23,41 +22,6 @@ public class HeatCalculationUtility
     }
 
 
-//    /**
-//     * Converts the input heat level to a color.
-//     * Higher heat levels are indicated by higher intensities of red.
-//     * @param heatLevel a number from 1 to 10
-//     * @return a Color between blue (for 1) and red (for 10)
-//     */
-//    public static Color colorOfHeat(int heatLevel) {
-//        // Get percentage
-//        float heatPercentage = heatLevel / ((float) Constants.HEAT_MAX);
-//
-//        // Get color based on percentage 0 = completely BLUE 1 = Completely RED
-//        //Color heatColor = Constants.HEAT_MIN_COLOR.interpolate(Constants.HEAT_MAX_COLOR, heatPercentage);
-//        Color heatColor = Constants.HEAT_MIN_COLOR; //FIXME. interpolate is a JavaFX method.
-//
-//        return heatColor;
-//    }
-
-
-//    /**
-//     * Converts the input heat level to a color.
-//     * Higher heat levels are indicated by higher intensities of red.
-//     * @param heatLevel a number from 1 to 10
-//     * @return a hexadecimal String of the form "FFFFFF" representing a color
-//     */
-//    public static String colorOfHeatAsHex(int heatLevel) {
-//        //Convert heat level to Color
-//        Color fileHeatColor = colorOfHeat(heatLevel);
-//
-//        //Convert Color to hex
-//        String colorString = fileHeatColor.toString();
-//        return colorString.substring(colorString.indexOf("x") + 1);
-//    }
-
-
-
     private static void assignHeatLevelsFileSize(Codebase codebase)
     {
         LOG.info("Calculating heat based on file size...");
@@ -70,7 +34,6 @@ public class HeatCalculationUtility
         Set<FileObject> fileObjectSet = codebase.getActiveFileObjects();
         for (FileObject fileObject : fileObjectSet)
         {
-            //System.out.println("\n---------- "+fileObject.getFilename()+" ----------");
             //The oldest commits are at the front of the LinkedHashMap
             LinkedHashMap<String, HeatObject> commitHashToHeatObjectMap = fileObject.getCommitHashToHeatObjectMap();
 
@@ -88,13 +51,6 @@ public class HeatCalculationUtility
                     //If the file size increased at all, incur 2 heat
                     long oldFileSize = lastHeatObject.getFileSize();
                     long newFileSize = newerHeatObject.getFileSize();
-
-/*if (fileObject.getFilename().equals("HeatMapPane.java"))
-{
-    System.out.println("New Hash: "+commitToHeatObjectEntry.getKey());
-    System.out.println("oldFileSize: "+oldFileSize);
-    System.out.println("newFileSize: "+newFileSize);
-}*/
 
                     //File size increase -> gain heat
                     if (newFileSize > oldFileSize)
@@ -142,9 +98,6 @@ public class HeatCalculationUtility
                     //Store the heat
                     newerHeatObject.setFileSizeHeat((int) Math.round( heatLevel ));
                 }
-//if (fileObject.getFilename().equals("HeatMapPane.java"))
-//System.out.println("Heat: "+newerHeatObject.getHeatLevel()+"\n");
-
                 lastHeatObject = newerHeatObject;
             }
         }
@@ -153,19 +106,6 @@ public class HeatCalculationUtility
 
     private static int computeFileSizeHeat(long fileSize)
     {
-        /*/For every N characters, gain 1 heat
-        final int CHARACTER_HEAT_RATIO = 1800;
-
-        //Handle case of file size being too large
-        final int CHARACTERS_FOR_MAX_HEAT = CHARACTER_HEAT_RATIO * Constants.HEAT_MAX;
-        if (fileSize > CHARACTERS_FOR_MAX_HEAT)
-            return Constants.HEAT_MAX;
-
-        System.out.println(""+fileSize+" chars yields "+(fileSize / CHARACTER_HEAT_RATIO)+" heat");
-
-        return (int) (fileSize / CHARACTER_HEAT_RATIO);*/
-
-
         if (fileSize < 0)
             throw new IllegalArgumentException("computeFileSizeHeat() refuses to handle negative line count input `" + fileSize + "`");
 
@@ -173,8 +113,6 @@ public class HeatCalculationUtility
         final int CHARACTERS_FOR_MAX_HEAT = 10000;
         double fixedPart = Math.pow(Constants.HEAT_MAX, 1.0 / (CHARACTERS_FOR_MAX_HEAT - 1));
         int heatLevel = (int)((1.0 / fixedPart) * Math.pow(fixedPart, fileSize));
-
-        //System.out.println(""+fileSize+" chars yields "+heatLevel+" heat");
 
         //If the result is too large, constrain it
         if (heatLevel > Constants.HEAT_MAX)
@@ -191,17 +129,6 @@ public class HeatCalculationUtility
      */
     private static int computeLineCountHeat(long lineCount)
     {
-        //Linear technique -- commented out
-        /*//For every 100 lines, gain 1 heat
-        final int LINE_HEAT_RATIO = 80;
-
-        //Handle case of file size being too large
-        final int CHARACTERS_FOR_MAX_HEAT = CHARACTERS_PER_HEAT * Constants.HEAT_MAX;
-        if (fileSize > CHARACTERS_FOR_MAX_HEAT)
-            return CHARACTERS_FOR_MAX_HEAT;
-
-        return (int) (fileSize / CHARACTERS_PER_HEAT);*/
-
         if (lineCount < 0)
             throw new IllegalArgumentException("computeLineCountHeat() refuses to handle negative line count input `" + lineCount + "`");
 
@@ -209,8 +136,6 @@ public class HeatCalculationUtility
         final int LINES_FOR_MAX_HEAT = 550;
         double fixedPart = Math.pow(Constants.HEAT_MAX, 1.0 / (LINES_FOR_MAX_HEAT - 1));
         int heatLevel = (int)((1.0 / fixedPart) * Math.pow(fixedPart, lineCount));
-
-        //System.out.println(""+lineCount+" lines yields "+heatLevel+" heat");
 
         //If the result is too large, constrain it
         if (heatLevel > Constants.HEAT_MAX)
@@ -244,13 +169,6 @@ public class HeatCalculationUtility
                 {
                     newerHeatObject.setNumberOfCommitsHeat(lastHeatObject.getNumberOfCommitsHeat()); //use previous heat, then modify
 
-/*if (fileObject.getFilename().equals("HeatMapPane.java"))
-{
-    System.out.println("New Hash: "+commitToHeatObjectEntry.getKey());
-    System.out.println("oldFileSize: "+oldFileSize);
-    System.out.println("newFileSize: "+newFileSize);
-}*/
-
                     //If the file was committed to, incur heat
                     if (newerHeatObject.getNumberOfCommits() > lastHeatObject.getNumberOfCommits())
                     {
@@ -274,8 +192,6 @@ public class HeatCalculationUtility
                 {
                     newerHeatObject.setNumberOfCommitsHeat(Constants.HEAT_MIN); //No commits to the file yet
                 }
-//if (fileObject.getFilename().equals("HeatMapPane.java"))
-                //System.out.println("Heat: "+newerHeatObject.getHeatLevel()+"\n");
 
                 lastHeatObject = newerHeatObject;
             }
@@ -311,7 +227,6 @@ public class HeatCalculationUtility
         //Assign heat level to every HeatObject based on number of authors
         for (FileObject fileObject : fileObjectSet)
         {
-//System.out.println("\n---------------"+fileObject.getFilename()+"---------------\n");
             HashMap<String, Integer> activeAuthors = new HashMap<>(); //the emails of which authors have been committing to the file recently
             //...and their integer score, which increases based on how many commits they have pushed recently
 
@@ -335,9 +250,6 @@ public class HeatCalculationUtility
                     //Ensure the file was a part of the commit
                     if (newerHeatObject.getNumberOfCommits() > lastHeatObject.getNumberOfCommits())
                     {
-//System.out.println("Author of "+commitHash+": "+authorEmail);
-//System.out.println("activeAuthors = "+activeAuthors);
-
                         //Returning author
                         if (activeAuthors.containsKey(authorEmail) && activeAuthors.get(authorEmail) > 0)
                         {
@@ -376,7 +288,6 @@ public class HeatCalculationUtility
                 }
                 //Account for the first commit
                 else if (newerHeatObject.getNumberOfCommits() == 1) {
-//System.out.println("First author in "+commitHash+": "+authorEmail);
                     activeAuthors.put(authorEmail, SCORE_PENALTY_FOR_NEW_AUTHOR);
                     numberOfActiveAuthors = 1; //there is 1 active author on the first commit
                 }
@@ -386,7 +297,6 @@ public class HeatCalculationUtility
                 //lastHeatBeforeTransformation = heatLevel;
                 int heatLevel = activeAuthorsToHeatLevel(numberOfActiveAuthors, totalAuthorCount);
                 newerHeatObject.setNumberOfAuthorsHeat(heatLevel);
-//System.out.println("Heat level: "+heatLevel);
                 lastHeatObject = newerHeatObject;
             }
         }
@@ -458,27 +368,6 @@ public class HeatCalculationUtility
         LOG.info("Finished calculating overall heat.");
     }
 
-    //DEPRECATED--it's now better to assign all heat at once
-//    public static void assignHeatLevels(Codebase codebase, Constants.HeatMetricOptions heatMetricOption)
-//    {
-//        switch (heatMetricOption)
-//        {
-//            case OVERALL:
-//                assignHeatLevelsOverall(codebase);
-//                break;
-//            case FILE_SIZE:
-//                assignHeatLevelsFileSize(codebase);
-//                break;
-//            case NUM_OF_COMMITS:
-//                assignHeatLevelsNumberOfCommits(codebase);
-//                break;
-//            case NUM_OF_AUTHORS:
-//                assignHeatLevelsNumberOfAuthors(codebase);
-//                break;
-//            default:
-//                throw new UnsupportedOperationException("Invalid heat metric selected in HeatCalculationUtility.assignHeatLevels(...)");
-//        }
-//    }
 
     public static void assignHeatLevels(Codebase codebase)
     {
@@ -488,11 +377,13 @@ public class HeatCalculationUtility
     private static void accept(String key, HeatObject heatObject) {
         //Calculate weighted sum of heat
         heatObject.setOverallHeat(
-                (heatObject.getFileSizeHeat() * WEIGHT_FILE_SIZE) +
-                        (heatObject.getNumberOfCommitsHeat() * WEIGHT_NUM_OF_COMMITS) +
-                        (heatObject.getNumberOfAuthorsHeat() * WEIGHT_NUM_OF_AUTHORS) +
-                        (heatObject.getDegreeOfCouplingHeat() * WEIGHT_DEGREE_OF_COUPLING) +
-                        (heatObject.getGoodBadCommitRatioHeat() * WEIGHT_COMMIT_RATIO)
+                (
+                    (heatObject.getFileSizeHeat() * WEIGHT_FILE_SIZE) +
+                    (heatObject.getNumberOfCommitsHeat() * WEIGHT_NUM_OF_COMMITS) +
+                    (heatObject.getNumberOfAuthorsHeat() * WEIGHT_NUM_OF_AUTHORS) +
+                    (heatObject.getDegreeOfCouplingHeat() * WEIGHT_DEGREE_OF_COUPLING) +
+                    (heatObject.getGoodBadCommitRatioHeat() * WEIGHT_COMMIT_RATIO)
+                ) / (double) HEAT_WEIGHT_TOTAL
         );
     }
 }

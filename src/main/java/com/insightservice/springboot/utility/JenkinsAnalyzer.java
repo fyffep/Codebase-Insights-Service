@@ -25,13 +25,6 @@ public class JenkinsAnalyzer
 {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    //TEMP
-    static String username = "vampire";
-    static String apiKey = "116edd6a084a745d5a1e5d743a338c0bdc";
-    static String jenkinsHost = "https://codebase-insights-rawlins-vampire.snowy.luddy.indiana.edu";
-    static String jobName = "P565-SP21-Patient-Manager";
-
-
     /**
      * @param buildNumber the Jenkins build number
      * @param branchName the name of the GitHub branch that the Jenkins user initiated the build for.
@@ -39,12 +32,12 @@ public class JenkinsAnalyzer
      * was not used for that commit.
      * @throws JsonProcessingException
      */
-    private static String getCommitHashFromBuildNumberAndBranchName(int buildNumber, String branchName) throws JsonProcessingException
+    private static String getCommitHashFromBuildNumberAndBranchName(int buildNumber, String branchName, String username, String apiKey, String jobUrl) throws JsonProcessingException
     {
         //Parse specific build
-        WebClient client = WebClient.create(jenkinsHost);
+        WebClient client = WebClient.create(jobUrl);
         String response = client.get()
-                .uri(String.format("job/%s/%d/api/json", jobName, buildNumber))
+                .uri(String.format("/%d/api/json", buildNumber))
                 .headers(headers -> headers.setBasicAuth(username, apiKey))
                 .retrieve()
                 .bodyToMono(String.class)
@@ -78,12 +71,12 @@ public class JenkinsAnalyzer
      * Returns the GitHub commit hash that was used to trigger the Jenkins build.
      * If the build did not occur on the target branch, return <code> null. </code>
      */
-    private static String getCommitHashFromBuildNumber(int buildNumber, String branchName) throws JsonProcessingException
+    private static String getCommitHashFromBuildNumber(int buildNumber, String branchName, String username, String apiKey, String jobUrl) throws JsonProcessingException
     {
         //Parse specific build
-        WebClient client = WebClient.create(jenkinsHost);
+        WebClient client = WebClient.create(jobUrl);
         String response = client.get()
-                .uri(String.format("job/%s/%d/api/json", jobName, buildNumber))
+                .uri(String.format("/%d/api/json", buildNumber))
                 .headers(headers -> headers.setBasicAuth(username, apiKey))
                 .retrieve()
                 .bodyToMono(String.class)
@@ -114,12 +107,13 @@ public class JenkinsAnalyzer
      * Requests the most recent builds from Jenkins and stores them in a list of JenkinsBuilds.
      * @param maxCount the inclusive maximum number of most recent builds to fetch
      */
-    private static List<JenkinsBuild> getListOfRecentBuilds(int maxCount) throws IOException, WebClientRequestException
+    private static List<JenkinsBuild> getListOfRecentBuilds(int maxCount, String username, String apiKey, String jobUrl) throws IOException, WebClientRequestException
     {
         if (maxCount < 1)
             throw new IllegalArgumentException("maxCount must be at least one");
         //FIXME adding maxCount to the uri causes an exception
 
+        String jenkinsHost = getJenkinsHostFromJobUrl(jobUrl);
         WebClient client = WebClient.create(jenkinsHost);
         String response = client.get()
                 .uri("/api/json?tree=jobs[name,url,builds[number,result,duration,url]]")
@@ -173,15 +167,15 @@ public class JenkinsAnalyzer
         return filesInStackTrace;
     }
 
-    private static void requestAndStoreConsoleData(int buildNumber, Codebase codebaseToModify, String commitHash)
+    private static void requestAndStoreConsoleData(int buildNumber, Codebase codebaseToModify, String commitHash, String username, String apiKey, String jobUrl)
     {
         Set<FileObject> fileObjectSet = codebaseToModify.getActiveFileObjectsExcludeDeletedFiles(commitHash);
 
+        String jenkinsHost = getJenkinsHostFromJobUrl(jobUrl);
         WebClient client = WebClient.create(jenkinsHost);
-        final String consoleUrl = "/job/%s/%d/logText/progressiveText?start=0";
         try {
             String response = client.get()
-                    .uri(String.format(consoleUrl, jobName, buildNumber))
+                    .uri(String.format("%s/%d/logText/progressiveText?start=0", jobUrl, buildNumber))
                     .headers(headers -> headers.setBasicAuth(username, apiKey))
                     .retrieve()
                     .bodyToMono(String.class)
@@ -211,27 +205,39 @@ public class JenkinsAnalyzer
         }
     }
 
+    private static String getJenkinsHostFromJobUrl(String jobUrl)
+    {
+        try
+        {
+            return jobUrl.split("/job")[0];
+        }
+        catch (IndexOutOfBoundsException ex)
+        {
+            throw new BadUrlException("Could not read the Jenkins URL correctly due to it not having the word 'job");
+        }
+    }
 
 
 
-    public static void attachJenkinsStackTraceActivityToCodebase(Codebase codebase) throws IOException
+
+    public static void attachJenkinsStackTraceActivityToCodebase(Codebase codebase, String username, String apiKey, String jobUrl) throws IOException
     {
         try
         {
             //Get all the recent builds. The build numbers could be noncontiguous, like 18, 16, 15, 14, 10, 9
             final int NUMBER_OF_BUILDS_TO_CHECK = 50;
             int remainingBuildsToCheck = NUMBER_OF_BUILDS_TO_CHECK;
-            List<JenkinsBuild> recentBuildList = getListOfRecentBuilds(Integer.MAX_VALUE); //not sure if it's an issue to get every single build
+            List<JenkinsBuild> recentBuildList = getListOfRecentBuilds(Integer.MAX_VALUE, username, apiKey, jobUrl);
             for (JenkinsBuild jenkinsBuild : recentBuildList) {
                 if (!jenkinsBuild.isSuccessful()) //if build failed
                 {
                     //Determine which commit hash caused the build failure
                     int buildNumber = jenkinsBuild.getNumber();
-                    String commitHashOfBuild = getCommitHashFromBuildNumber(buildNumber, codebase.getActiveBranch());
+                    String commitHashOfBuild = getCommitHashFromBuildNumber(buildNumber, codebase.getActiveBranch(), username, apiKey, jobUrl);
 
                     if (commitHashOfBuild != null) {
                         //Find which files appeared in the stack trace at that build, then increment their counter in the Codebase
-                        requestAndStoreConsoleData(buildNumber, codebase, commitHashOfBuild);
+                        requestAndStoreConsoleData(buildNumber, codebase, commitHashOfBuild, username, apiKey, jobUrl);
 
                         remainingBuildsToCheck--;
                         if (remainingBuildsToCheck <= 0)

@@ -4,6 +4,8 @@ import com.insightservice.springboot.model.codebase.Codebase;
 import com.insightservice.springboot.model.codebase.Commit;
 import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.model.codebase.HeatObject;
+import com.insightservice.springboot.model.knowledge.Contributor;
+import com.insightservice.springboot.model.knowledge.KnowledgeGraph;
 import com.insightservice.springboot.utility.commit_history.JGitHelper;
 import com.insightservice.springboot.utility.filesize.FileSizeCalculator;
 import org.eclipse.jgit.api.BlameCommand;
@@ -63,7 +65,6 @@ public class RepositoryAnalyzer {
      * Closes the open local Git repository, allowing
      * the files to be deleted. Further methods in this class
      * are likely to fail after cleanup.
-     * FIXME no one wants to remember to call a cleanup method.
      */
     public void cleanup() {
         git.getRepository().close();
@@ -143,8 +144,7 @@ public class RepositoryAnalyzer {
                 for (DiffEntry diffEntry : diffs) {
                     // Get file id (aka path)
                     String newFilePath = diffEntry.getNewPath();
-                    // TODO proper file filtering
-                    if (newFilePath.endsWith(".java")) {
+                    if (!GitIgnoreFilter.isIgnored(newFilePath)) {
                         // Get filename from diffEntry's path
                         String fileName = getFilename(newFilePath);
 
@@ -295,9 +295,8 @@ public class RepositoryAnalyzer {
 
         // Traverse through the old version of the project until the target file is found.
         while (treeWalk.next()) {
-            // TODO proper file filtering, same as process heat metrics method
             String path = treeWalk.getPathString();
-            if (path.endsWith(".java")) {
+            if (!GitIgnoreFilter.isIgnored(path)) {
                 //Knowledge Collection
                 try {
                     collectKnowledge(personToKnowledge, path);
@@ -334,6 +333,67 @@ public class RepositoryAnalyzer {
 
     }
 
+    public KnowledgeGraph getKnowledgeGraph() throws IOException
+    {
+        //Analyze codebase for knowledge
+        HashMap<String, Pair<Integer, Set<String>>> linesAndFilePathsKnownPerAuthorMap = getKnowledge();
+
+        //Create KnowledgeGraph
+        KnowledgeGraph knowledgeGraph = new KnowledgeGraph();
+        int sourceAuthorId = 0;
+        for (String authorEmail : linesAndFilePathsKnownPerAuthorMap.keySet())
+        {
+            //Create Contributor object for author
+            int knowledgeScore = linesAndFilePathsKnownPerAuthorMap.get(authorEmail).getFirst();
+            Contributor contributor = new Contributor(sourceAuthorId, authorEmail, knowledgeScore);
+            knowledgeGraph.addContributor(contributor);
+
+            //Record files they know
+            HashSet<String> fileNamesKnown = new HashSet<>();
+            for (String filePathKnown : linesAndFilePathsKnownPerAuthorMap.get(authorEmail).getSecond())
+                fileNamesKnown.add(getFilename(filePathKnown)); //convert file path to file name
+            contributor.setFilesKnown(fileNamesKnown);
+
+            //Add to totalLinesInCodebase sum
+            knowledgeGraph.setTotalLinesInCodebase(knowledgeScore + knowledgeGraph.getTotalLinesInCodebase());
+
+            //Iterate through the files the source author knows
+            for (String filePath : linesAndFilePathsKnownPerAuthorMap.get(authorEmail).getSecond())
+            {
+                //Iterate through other authors and their files known
+                int targetAuthorId = 0;
+                for (String otherAuthorEmail : linesAndFilePathsKnownPerAuthorMap.keySet())
+                {
+                    if (!authorEmail.equals(otherAuthorEmail))
+                    {
+                        for (String otherFilePath : linesAndFilePathsKnownPerAuthorMap.get(otherAuthorEmail).getSecond())
+                        {
+                            //Both authors know the same file
+                            if (filePath.equals(otherFilePath))
+                            {
+                                knowledgeGraph.setLink(sourceAuthorId, targetAuthorId);
+                                //System.out.println(authorEmail+" knows "+otherAuthorEmail+" because of file "+filePath);
+                            }
+                        }
+                    }
+                    targetAuthorId++;
+                }
+            }
+            sourceAuthorId++;
+        }
+
+        //Calculate count of totalFilesInCodebase
+        Set<String> filePathSet = new HashSet<>();
+        for (Pair<Integer, Set<String>> lineCountAndFilePathPair : linesAndFilePathsKnownPerAuthorMap.values())
+            filePathSet.addAll(lineCountAndFilePathPair.getSecond());
+        knowledgeGraph.setTotalFilesInCodebase(filePathSet.size() + knowledgeGraph.getTotalFilesInCodebase());
+
+        return knowledgeGraph;
+    }
+
+
+
+
     private static void transferHeatMetricsFromLatestToCurrent(FileObject fileObject, RevCommit processCommit) {
         String previousCommitHashId = fileObject.getLatestCommitInTreeWalk();
         // Probably first commit..
@@ -358,6 +418,18 @@ public class RepositoryAnalyzer {
         processHeatObject.setFileSize(previousHeatObject.getFileSize());
         processHeatObject.setNumberOfCommits(previousHeatObject.getNumberOfCommits());
         processHeatObject.setNumberOfAuthors(previousHeatObject.getNumberOfAuthors());
+
+
+
+        //FIXME: QUICK TEMP FIX FOR NEGATIVE COMMIT & AUTHOR COUNTS ON JS FILES
+        /*if (processHeatObject.getNumberOfAuthors() <= 0) {
+            LOG.error(fileObject.getFilename()+" had a negative author count! Fixing this.");
+            processHeatObject.setNumberOfAuthors(1);
+        }
+        if (processHeatObject.getNumberOfCommits() <= 0) {
+            LOG.error(fileObject.getFilename()+" had a negative commit count! Fixing this.");
+            processHeatObject.setNumberOfCommits(1);
+        }*/
     }
 
     private static void updateLineCountAndFileSizeMetrics(@NotNull TreeWalk treeWalk, @NotNull FileObject fileObject, String commitHash) throws IOException {

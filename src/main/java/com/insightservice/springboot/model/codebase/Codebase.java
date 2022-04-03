@@ -65,7 +65,7 @@ public class Codebase
             else {
                 //Potentially, we could instead default to "No branches found" to keep the plugin window empty.
                 //For now, we'll throw an exception.
-                throw new IOException("Could not find any branches in the Git repository to be analyzed"); //FIXME determine how to handle the situation where the local repository cannot be found
+                throw new IOException("Could not find any branches in the Git repository to be analyzed");
             }
         }
 

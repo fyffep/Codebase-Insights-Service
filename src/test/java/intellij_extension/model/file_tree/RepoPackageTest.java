@@ -1,6 +1,7 @@
 package intellij_extension.model.file_tree;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.model.file_tree.RepoPackage;
@@ -38,7 +39,7 @@ public class RepoPackageTest
         subPackage.addFileTreeNode(new FileObject(new File("beta.java").toPath()));
         rootPackage.addFileTreeNode(subPackage);
 
-        String EXPECTED_JSON = "{\"path\":\".\",\"fileTreeNodeList\":[{\"path\":\"alpha.java\",\"filename\":\"alpha.java\",\"commitHashToHeatObjectMap\":{},\"uniqueAuthors\":[],\"uniqueAuthorEmails\":[],\"latestCommitInTreeWalk\":\"\",\"latestCommitInDiffEntryList\":\"\"},{\"path\":\"src\",\"fileTreeNodeList\":[{\"path\":\"beta.java\",\"filename\":\"beta.java\",\"commitHashToHeatObjectMap\":{},\"uniqueAuthors\":[],\"uniqueAuthorEmails\":[],\"latestCommitInTreeWalk\":\"\",\"latestCommitInDiffEntryList\":\"\"}]}]}";
+        String EXPECTED_JSON = "{\"path\":\".\",\"fileTreeNodeList\":[{\"path\":\"alpha.java\",\"filename\":\"alpha.java\",\"degreeOfCouplingHeat\":0,\"latestHeatObject\":null,\"uniqueAuthors\":[],\"uniqueAuthorEmails\":[]},{\"path\":\"src\",\"fileTreeNodeList\":[{\"path\":\"beta.java\",\"filename\":\"beta.java\",\"degreeOfCouplingHeat\":0,\"latestHeatObject\":null,\"uniqueAuthors\":[],\"uniqueAuthorEmails\":[]}]}]}";
         String actualJson = objectMapper.writeValueAsString(rootPackage);
 
         assertEquals(EXPECTED_JSON, actualJson);

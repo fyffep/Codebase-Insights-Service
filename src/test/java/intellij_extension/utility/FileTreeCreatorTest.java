@@ -1,32 +1,18 @@
 package intellij_extension.utility;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.insightservice.springboot.model.codebase.Codebase;
 import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.model.file_tree.RepoPackage;
 import com.insightservice.springboot.model.file_tree.RepoTreeNode;
-import com.insightservice.springboot.service.RepositoryAnalysisService;
 import com.insightservice.springboot.utility.FileTreeCreator;
-import configuration.ObjectMapperConfiguration;
-import intellij_extension.model.file_tree.RepositoryAnalysisServiceConfiguration;
-import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Import;
 
-import java.io.IOException;
 import java.nio.file.Path;
 
 import static org.junit.Assert.*;
 
-@Import({ObjectMapperConfiguration.class, RepositoryAnalysisServiceConfiguration.class})
 public class FileTreeCreatorTest
 {
-    @Autowired
-    ObjectMapper objectMapper;
-    @Autowired
-    RepositoryAnalysisService repositoryAnalysisService;
-
     @Test
     public void createFileTree_FilesAndPackagesExist_Mock()
     {
@@ -74,23 +60,5 @@ public class FileTreeCreatorTest
         assertEquals(SRC_SIZE, actualSrc.getFileTreeNodeList().size());
         final int MODEL_SIZE = 1;
         assertEquals(MODEL_SIZE, actualModel.getFileTreeNodeList().size());
-    }
-
-
-
-    @Test
-    public void createFileTree_JsonStructure_PatientManagerRepo() throws GitAPIException, IOException
-    {
-//        //Prepare test data
-//        Codebase codebase = new Codebase();
-//        JGitHelper.cloneRepository(REMOTE_URL, MASTER_BRANCH);
-//        RepositoryAnalyzer repositoryAnalyzer = new RepositoryAnalyzer(REMOTE_URL);
-//        repositoryAnalyzer.attachBranchNameList(codebase); //method being tested
-//
-//        //FIXME there are files here which should not exist
-//        String EXPECTED_JSON = "";
-//        String actualJson = objectMapper.writeValueAsString(codebase.getActiveFileObjects());
-//
-//        assertEquals(EXPECTED_JSON, actualJson);
     }
 }

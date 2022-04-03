@@ -3,6 +3,7 @@ package com.insightservice.springboot.utility.commit_history;
 import com.insightservice.springboot.exception.BadBranchException;
 import com.insightservice.springboot.exception.BadUrlException;
 import com.insightservice.springboot.model.codebase.Codebase;
+import com.insightservice.springboot.utility.AuthUtility;
 import org.apache.tomcat.util.http.fileupload.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.MergeResult;
@@ -12,7 +13,9 @@ import org.eclipse.jgit.api.errors.RefNotAdvertisedException;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.FetchResult;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -55,7 +58,6 @@ public class JGitHelper
     {
         //Make a dir for the cloned repo
         File directory = getPathOfLocalRepository(remoteUrl);
-        //TODO the repo shouldn't be deleted if it the branch being used is the same. Need to figure out how to check current branch & pull.
         if (directory.exists())
             FileUtils.deleteDirectory(directory);
         directory.mkdirs();
@@ -63,35 +65,85 @@ public class JGitHelper
         //Clone
         LOG.info("Cloning from " + remoteUrl + " to " + directory);
         //Use default branch (master/main/etc)
+
+        // check if auth details have been buffer
+        String username = "visheshdembla@hotmail.com";
+
+        CredentialsProvider credentialsProvider = null;
+        if(AuthUtility.getInstance().getToken(username) != null) {
+            // set Auth Utility
+            credentialsProvider = new UsernamePasswordCredentialsProvider(AuthUtility.getInstance().getToken(username), "");
+        }
+
+
+
         if (branchName.equals(USE_DEFAULT_BRANCH) || branchName.isBlank())
         {
             LOG.info("No branch specified.");
-            try (Git result = Git.cloneRepository()
-                    //Note lack of setBranch(...) call
-                    .setURI(remoteUrl)
-                    .setDirectory(directory)
-                    .call()) {
+
+            // if credentials provided
+            if(credentialsProvider != null) {
+
+                try (Git result = Git.cloneRepository()
+                        //Note lack of setBranch(...) call
+                        .setURI(remoteUrl)
+                        .setDirectory(directory)
+                        .setCredentialsProvider(credentialsProvider)
+                        .call()) {
+                }
+                catch (Exception ex) //handles private and non-existent repos
+                {
+                    throw new BadUrlException("No repository could be read from your GitHub URL.");
+                }
+            } else {
+
+                try (Git result = Git.cloneRepository()
+                        //Note lack of setBranch(...) call
+                        .setURI(remoteUrl)
+                        .setDirectory(directory)
+
+                        .call()) {
+                }
+                catch (Exception ex) //handles private and non-existent repos
+                {
+                    throw new BadUrlException("No repository could be read from your GitHub URL.");
+                }
             }
-            catch (Exception ex) //handles private and non-existent repos
-            {
-                throw new BadUrlException("No repository could be read from your GitHub URL.");
-            }
+
+
         }
         //Else, choose specific branch
         else
         {
             LOG.info("Using branch " + branchName);
-            try (Git result = Git.cloneRepository()
-                    .setBranch(branchName)
-                    .setURI(remoteUrl)
-                    .setDirectory(directory)
-                    .call()) {
-            }
-            catch (Exception ex) //handles private and non-existent repos
-            {
-                throw new BadUrlException("No repository could be read from your GitHub URL.");
+
+            // if credentials provided
+            if(credentialsProvider != null) {
+                try (Git result = Git.cloneRepository()
+                        .setBranch(branchName)
+                        .setURI(remoteUrl)
+                        .setCredentialsProvider(credentialsProvider)
+                        .setDirectory(directory)
+                        .call()) {
+                } catch (Exception ex) //handles private and non-existent repos
+                {
+                    throw new BadUrlException("No repository could be read from your GitHub URL.");
+                }
+            } else {
+                try (Git result = Git.cloneRepository()
+                        .setBranch(branchName)
+                        .setURI(remoteUrl)
+                        .setDirectory(directory)
+                        .call()) {
+                } catch (Exception ex) //handles private and non-existent repos
+                {
+                    throw new BadUrlException("No repository could be read from your GitHub URL.");
+                }
             }
         }
+
+
+
 
         //Ensure files were cloned successfully
         File pathToRepo = JGitHelper.getPathOfLocalRepository(remoteUrl);
@@ -190,10 +242,30 @@ public class JGitHelper
      * is currently active for the cloned repo.
      */
     public static void updateLocalRepository(String remoteUrl) throws IOException, GitAPIException {
+        LOG.info("Pulling the latest changes for `"+remoteUrl+"`...");
         try (Repository repository = openLocalRepository(remoteUrl)) {
             try (Git git = new Git(repository)) {
                 git.pull().call();
             }
+        }
+    }
+
+    /**
+     * Tries to do a git pull to get the latest changes.
+     * If that fails, clones the latest version of the repo.
+     */
+    public static void cloneOrUpdateRepository(String remoteUrl, String branchName) throws GitAPIException, IOException
+    {
+        try
+        {
+            //Try to pull
+            JGitHelper.updateLocalRepository(remoteUrl);
+        }
+        catch (IOException | GitAPIException ex)
+        {
+            //Fresh clone
+            LOG.info("git pull failed for repo with URL `"+remoteUrl+"`. Cloning is necessary.");
+            JGitHelper.cloneRepository(remoteUrl, branchName);
         }
     }
 }
