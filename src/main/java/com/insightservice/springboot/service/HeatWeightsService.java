@@ -29,8 +29,9 @@ public class HeatWeightsService
             throw new NullPointerException("A heatWeightAdjustments needs a heat metric to weight adjustment map to be valid.");
 
         //Get or create existing HeatWeights from the DB
-        HeatWeights existingHeatWeights = heatWeightsRepository.findById(HeatWeights.SINGLETON_ID)
+        HeatWeights existingHeatWeights = heatWeightsRepository.findById(HeatWeights.ID_OF_ADJUSTMENT_TOTAL)
                 .orElse(new HeatWeights());
+        existingHeatWeights.setId(HeatWeights.ID_OF_ADJUSTMENT_TOTAL);
         HashMap<HeatMetricOptionsExceptOverall, Integer> weightMapToUpdate = existingHeatWeights.getMetricNameToWeightMap();
 
         //Validate the adjustments
@@ -61,8 +62,11 @@ public class HeatWeightsService
 
         //Now existingHeatWeights's weightMapToUpdate has the new heat weights.
 
-        //Save to DB
+        //Save adjustment total to DB
         heatWeightsRepository.save(existingHeatWeights);
+
+        //Save adjustment itself to DB
+        heatWeightsRepository.save(heatWeightAdjustments);
 
         return existingHeatWeights;
     }

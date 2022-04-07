@@ -11,12 +11,23 @@ public class GitIgnoreFilter
             ".chunk.css",
             ".chunk.css.map",
             ".jar",
+            ".o",
             /* IMAGES */
             ".png",
             ".svg",
             ".ico",
             ".jpg",
             ".jpeg",
+            ".heic",
+            ".gif",
+            ".ico",
+            /* AUDIO/VIDEO */
+            ".m4a",
+            ".mp3",
+            ".mp4",
+            ".wav",
+            ".mov",
+            ".avi",
             /* MISC */
             ".lnk" //Windows shortcut file
     );
@@ -43,6 +54,8 @@ public class GitIgnoreFilter
         for (String extensionToIgnore : DEFAULT_IGNORE_EXTENSIONS)
         {
             if (filePath.endsWith(extensionToIgnore))
+                return true;
+            if (filePath.toUpperCase().endsWith(extensionToIgnore.toUpperCase()))
                 return true;
         }
         for (String extensionToIgnore : DEFAULT_IGNORE_IF_CONTAINS)

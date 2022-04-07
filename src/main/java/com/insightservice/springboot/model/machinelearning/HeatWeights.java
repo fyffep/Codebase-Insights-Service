@@ -5,24 +5,34 @@ import com.insightservice.springboot.Constants;
 import com.insightservice.springboot.Constants.HeatMetricOptionsExceptOverall;
 import org.springframework.data.annotation.Id;
 
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.util.HashMap;
 
 
 /**
  * For each heat metric, we assign an integer weight to control how much it contributes to each a file's heat.
- * There is only one HeatWeights instance for the entire system, and it is storied on the database with ID 0.
+ * There is only one HeatWeights **sum** for the entire system, and it is stored on the database with ID -1.
+ * All other HeatWeights instances are used to record adjustments to this total.
  * The weights may be adjusted through the HashMap<HeatMetricOptionsExceptOverall, Integer> metricNameToWeightMap.
  */
 public class HeatWeights
 {
     @Id
     @JsonIgnore
-    private String singletonId; //always takes value of SINGLETON_ID. The weird syntax here is needed for MongoDB.
-    public static final String SINGLETON_ID = "0";
+    private String id;
+    //HeatWeights instance #-1 is the only one that records the sum of all adjustments.
+    public static final String ID_OF_ADJUSTMENT_TOTAL = "-1";
 
     //The weights in this map should add up to roughly Constants.HEAT_WEIGHT_TOTAL (i.e. 1000 at the time of writing this)
     //...but this is not enforced anywhere as a requirement.
     private HashMap<HeatMetricOptionsExceptOverall, Integer> metricNameToWeightMap;
+
+    //These fields will be null if the instance has ID -1.
+    //Otherwise, they record where an adjustment took place.
+    private String commitHash;
+    private String fileName;
+    private String gitHubUrl;
 
 
     public HeatWeights() {
@@ -34,27 +44,16 @@ public class HeatWeights
         metricNameToWeightMap.put(HeatMetricOptionsExceptOverall.DEGREE_OF_COUPLING, Constants.WEIGHT_DEGREE_OF_COUPLING);
         metricNameToWeightMap.put(HeatMetricOptionsExceptOverall.COMMIT_RATIO, Constants.WEIGHT_COMMIT_RATIO);
         metricNameToWeightMap.put(HeatMetricOptionsExceptOverall.CYCLOMATIC_COMPLEXITY, Constants.WEIGHT_CYCLOMATIC_COMPLEXITY);
-
-        singletonId = SINGLETON_ID;
     }
 
 
     //region getters/setters
-    /**
-     * Always returns HeatWeights.SINGLETON_ID.
-     * Only needed for MongoDB.
-     */
-    public String getSingletonId() {
-        return SINGLETON_ID;
+    public String getId() {
+        return this.id;
     }
 
-    /**
-     * Always sets the value to HeatWeights.SINGLETON_ID.
-     * Only needed for MongoDB.
-     * @param singletonId IGNORED
-     */
-    public void setSingletonId(String singletonId) {
-        this.singletonId = SINGLETON_ID;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public HashMap<HeatMetricOptionsExceptOverall, Integer> getMetricNameToWeightMap() {
@@ -64,5 +63,30 @@ public class HeatWeights
     public void setMetricNameToWeightMap(HashMap<HeatMetricOptionsExceptOverall, Integer> metricNameToWeightMap) {
         this.metricNameToWeightMap = metricNameToWeightMap;
     }
+
+    public String getCommitHash() {
+        return commitHash;
+    }
+
+    public void setCommitHash(String commitHash) {
+        this.commitHash = commitHash;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public String getGitHubUrl() {
+        return gitHubUrl;
+    }
+
+    public void setGitHubUrl(String gitHubUrl) {
+        this.gitHubUrl = gitHubUrl;
+    }
+
     //endregion
 }
