@@ -9,7 +9,8 @@ import com.insightservice.springboot.repository.CommitRepository;
 import com.insightservice.springboot.repository.FileObjectRepository;
 import com.insightservice.springboot.utility.GroupFileObjectUtility;
 import com.insightservice.springboot.utility.HeatCalculationUtility;
-import com.insightservice.springboot.utility.JenkinsAnalyzer;
+import com.insightservice.springboot.utility.ci_analyzer.GithubActionsAnalyzer;
+import com.insightservice.springboot.utility.ci_analyzer.JenkinsAnalyzer;
 import com.insightservice.springboot.utility.RepositoryAnalyzer;
 import com.insightservice.springboot.utility.commit_history.JGitHelper;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -18,8 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 
-import static com.insightservice.springboot.Constants.LOG;
-import static com.insightservice.springboot.Constants.USE_DEFAULT_BRANCH;
+import static com.insightservice.springboot.Constants.*;
 
 @Service
 public class RepositoryAnalysisService
@@ -96,31 +96,26 @@ public class RepositoryAnalysisService
         }
     }
 
-    public void runCiAnalysis(Codebase codebase, SettingsPayload settingsPayload) throws IOException
-    {
+    public void runCiAnalysis(Codebase codebase, SettingsPayload settingsPayload) throws IOException {
         String remoteUrl = settingsPayload.getGithubUrl();
         String ciToolChosen = settingsPayload.getCiToolChosen();
-        if (ciToolChosen.equals("Jenkins"))
-        {
+        String oAuthToken = settingsPayload.getGithubOAuthToken();
+
+        if (ciToolChosen.equals(JENKINS)) {
             //Analyze Jenkins data
             LOG.info("Beginning Jenkins analysis of the repository with URL `"+ remoteUrl +"`...");
             this.attachJenkinsData(codebase, settingsPayload.getCiUsername(), settingsPayload.getApiKey(), settingsPayload.getJobUrl());
-            codebase.setCommitBasedMapGroup(GroupFileObjectUtility.groupByCommit(codebase));
-        }
-        else if (ciToolChosen.equals("GitHub Actions"))
-        {
-            //TODO GitHub Actions logic
-            LOG.info("TODO GitHub Actions analysis of the repository with URL `"+ remoteUrl +"`...");
-        }
-        else
-        {
+        } else if (ciToolChosen.equals(GITHUB_ACTIONS)) {
+            //Analyze GitHub Actions data
+            LOG.info("Beginning GitHub Actions analysis of the repository with URL `"+ remoteUrl +"`...");
+            this.attachGitHubActionsData(codebase, remoteUrl, oAuthToken);
+        } else {
             LOG.info("Removing CI analysis for the repository with URL `"+ remoteUrl +"`...");
             //TODO remove CI credentials from the User, then save User to DB
         }
     }
 
-    public void attachJenkinsData(Codebase codebase, String username, String apiKey, String jobUrl) throws IOException
-    {
+    public void attachJenkinsData(Codebase codebase, String username, String apiKey, String jobUrl) throws IOException {
         //TODO: check if new Jenkins builds exist and skip re-calculation if all data is old
 
         JenkinsAnalyzer.attachJenkinsStackTraceActivityToCodebase(codebase, username, apiKey, jobUrl);
@@ -128,7 +123,10 @@ public class RepositoryAnalysisService
         saveCodebase(codebase);
     }
 
-
+    public void attachGitHubActionsData(Codebase codebase, String remoteUrl, String oAuthToken) throws IOException {
+        GithubActionsAnalyzer.attachBuildData(codebase, remoteUrl, oAuthToken);
+        saveCodebase(codebase);
+    }
 
     private void saveCodebase(Codebase codebase)
     {

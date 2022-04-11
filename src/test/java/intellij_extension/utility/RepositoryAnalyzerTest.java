@@ -3,9 +3,11 @@ package intellij_extension.utility;
 import com.insightservice.springboot.model.codebase.Codebase;
 import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.model.codebase.HeatObject;
+import com.insightservice.springboot.service.RepositoryAnalysisService;
 import com.insightservice.springboot.utility.RepositoryAnalyzer;
 import com.insightservice.springboot.utility.commit_history.JGitHelper;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.data.util.Pair;
 
@@ -633,5 +635,15 @@ public class RepositoryAnalyzerTest {
         assertEquals(EXPECTED_NUMBER_OF_AUTHORS_3, heatObject.getNumberOfAuthors());
         assertTrue(fileObject.getUniqueAuthorEmails().contains(EXPECTED_EMAIL_OF_AUTHOR_3_1));
         assertTrue(fileObject.getUniqueAuthorEmails().contains(EXPECTED_EMAIL_OF_AUTHOR_3_2));*/
+    }
+
+    @Test @Ignore
+    public void testGithubActions() throws IOException, GitAPIException {
+        // Create test objects
+        String remoteUrl = "https://github.iu.edu/P532-Fall2021/codebase-insights-service";
+        RepositoryAnalysisService repositoryAnalysisService = new RepositoryAnalysisService();
+//        Codebase codebase = extractDataToCodebase(remoteUrl, "develop"); //method being tested
+
+        repositoryAnalysisService.attachGitHubActionsData(null, remoteUrl, "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");
     }
 }
