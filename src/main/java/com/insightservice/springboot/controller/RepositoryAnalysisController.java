@@ -6,6 +6,7 @@ import com.insightservice.springboot.payload.SettingsPayload;
 import com.insightservice.springboot.service.RepositoryAnalysisService;
 import com.insightservice.springboot.utility.DashboardCalculationUtility;
 import com.insightservice.springboot.utility.FileTreeCreator;
+import com.insightservice.springboot.utility.GroupFileObjectUtility;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -32,8 +33,7 @@ public class RepositoryAnalysisController
 
     //When user updates settings, redo and store analysis
     @PostMapping("/initiate")
-    public ResponseEntity<?> initiateAnalysis(@RequestBody SettingsPayload settingsPayload, BindingResult result) throws GitAPIException, IOException
-    {
+    public ResponseEntity<?> initiateAnalysis(@RequestBody SettingsPayload settingsPayload, BindingResult result) throws GitAPIException, IOException {
         String remoteUrl = settingsPayload.getGithubUrl();
         String oauthToken = settingsPayload.getGithubOAuthToken(); //TODO this is unused, so use it for JGit & store it on the user class
 
@@ -42,6 +42,8 @@ public class RepositoryAnalysisController
         Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(remoteUrl, settingsPayload.getBranchName());
         //3rd-party CI tool analysis for build failures
         repositoryAnalysisService.runCiAnalysis(codebase, settingsPayload);
+
+        codebase.setCommitBasedMapGroup(GroupFileObjectUtility.groupByCommit(codebase));
 
         return new ResponseEntity<Codebase>(codebase, HttpStatus.OK);
     }

@@ -1,11 +1,11 @@
-package com.insightservice.springboot.utility;
+package com.insightservice.springboot.utility.ci_analyzer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.insightservice.springboot.exception.BadUrlException;
-import com.insightservice.springboot.model.JenkinsBuild;
+import com.insightservice.springboot.model.CIBuild;
 import com.insightservice.springboot.model.codebase.Codebase;
 import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.model.codebase.HeatObject;
@@ -107,7 +107,7 @@ public class JenkinsAnalyzer
      * Requests the most recent builds from Jenkins and stores them in a list of JenkinsBuilds.
      * @param maxCount the inclusive maximum number of most recent builds to fetch
      */
-    private static List<JenkinsBuild> getListOfRecentBuilds(int maxCount, String username, String apiKey, String jobUrl) throws IOException, WebClientRequestException
+    private static List<CIBuild> getListOfRecentBuilds(int maxCount, String username, String apiKey, String jobUrl) throws IOException, WebClientRequestException
     {
         if (maxCount < 1)
             throw new IllegalArgumentException("maxCount must be at least one");
@@ -122,7 +122,7 @@ public class JenkinsAnalyzer
                 .bodyToMono(String.class)
                 .block();
 
-        List<JenkinsBuild> jenkinsBuildList = new ArrayList<>();
+        List<CIBuild> jenkinsBuildList = new ArrayList<>();
 
         final ObjectNode root = objectMapper.readValue(response, ObjectNode.class);
         final JsonNode jobsArrayJson = root.get("jobs");
@@ -131,7 +131,7 @@ public class JenkinsAnalyzer
         JsonNode buildArrayJson = job0.get("builds");
         for (JsonNode buildNode : buildArrayJson) {
             ((ObjectNode) buildNode).remove("_class"); //allows us to convert to JenkinsBuild class
-            JenkinsBuild jenkinsBuild = objectMapper.readValue(buildNode.toString(), JenkinsBuild.class);
+            CIBuild jenkinsBuild = objectMapper.readValue(buildNode.toString(), CIBuild.class);
 
             System.out.printf("Jenkins build: `%s`\n", jenkinsBuild.toString());
             jenkinsBuildList.add(jenkinsBuild);
@@ -227,8 +227,8 @@ public class JenkinsAnalyzer
             //Get all the recent builds. The build numbers could be noncontiguous, like 18, 16, 15, 14, 10, 9
             final int NUMBER_OF_BUILDS_TO_CHECK = 50;
             int remainingBuildsToCheck = NUMBER_OF_BUILDS_TO_CHECK;
-            List<JenkinsBuild> recentBuildList = getListOfRecentBuilds(Integer.MAX_VALUE, username, apiKey, jobUrl);
-            for (JenkinsBuild jenkinsBuild : recentBuildList) {
+            List<CIBuild> recentBuildList = getListOfRecentBuilds(Integer.MAX_VALUE, username, apiKey, jobUrl);
+            for (CIBuild jenkinsBuild : recentBuildList) {
                 if (!jenkinsBuild.isSuccessful()) //if build failed
                 {
                     //Determine which commit hash caused the build failure

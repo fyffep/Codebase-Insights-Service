@@ -11,6 +11,8 @@ public class Constants
     public static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
     public static final String REPO_STORAGE_DIR = "repositories";
+    public static final String JENKINS = "Jenkins";
+    public static final String GITHUB_ACTIONS = "GitHub Actions";
 
     // Default Branches
     public static final String[] DEFAULT_BRANCHES = {"development", "master", "main"};
