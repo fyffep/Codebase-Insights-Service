@@ -8,12 +8,13 @@ C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\model\sonar\IssueResponse.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\model\codebase\Codebase.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\utility\AuthUtility.java
+C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\utility\ci_analyzer\GithubActionsAnalyzer.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\controller\HeatWeightsController.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\exception\CustomResponseEntityExceptionHandler.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\repository\CodebaseRepository.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\exception\BadUrlException.java
-C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\model\JenkinsBuild.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\utility\GitIgnoreFilter.java
+C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\model\CIBuild.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\Main.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\serialize\MongoConfig.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\model\codebase\Commit.java
@@ -31,6 +32,7 @@ C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\model\User.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\exception\BadUrlExceptionResponse.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\service\HeatWeightsService.java
+C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\utility\ci_analyzer\JenkinsAnalyzer.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\controller\KnowledgeGraphController.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\model\codebase\HeatObject.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\model\file_tree\RepoPackage.java
@@ -47,6 +49,6 @@ C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\model\codebase\DashboardModel.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\controller\MainController.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\model\knowledge\KnowledgeGraph.java
-C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\utility\JenkinsAnalyzer.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\model\codebase\FileObject.java
 C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\repository\HeatWeightsRepository.java
+C:\Users\Pete\Desktop\codebase-insights-service\src\main\java\com\insightservice\springboot\payload\UrlPayload.java

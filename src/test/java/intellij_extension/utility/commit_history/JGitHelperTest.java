@@ -88,7 +88,8 @@ public class JGitHelperTest
         codebase.setActiveBranch(MASTER_BRANCH);
         codebase.setLatestCommitHash("c60e6975fb2c60810cd2eedf31bf5075b3d02cd4"); //you should update with the latest commit if this fails
 
-        assertTrue(JGitHelper.checkIfLatestCommitIsUpToDate(codebase)); //method being tested
+        String oauthToken = ""; //No token
+        assertTrue(JGitHelper.checkIfLatestCommitIsUpToDate(codebase, oauthToken)); //method being tested
     }
 
     @Test
@@ -98,7 +99,8 @@ public class JGitHelperTest
         codebase.setActiveBranch(MASTER_BRANCH);
         codebase.setLatestCommitHash("4c98689dd08627fed0e5e4363efd101d6e4cb1c0"); //some random hash in our commit history
 
-        assertFalse(JGitHelper.checkIfLatestCommitIsUpToDate(codebase)); //method being tested
+        String oauthToken = ""; //No token
+        assertFalse(JGitHelper.checkIfLatestCommitIsUpToDate(codebase, oauthToken)); //method being tested
     }
 
     @Test
@@ -108,7 +110,8 @@ public class JGitHelperTest
         codebase.setActiveBranch("ui-development-commit-history");
         codebase.setLatestCommitHash("5c92c6f0818dd2b139cfb1f054c89ef7797dbe09"); //this is the final commit on this dead branch
 
-        assertTrue(JGitHelper.checkIfLatestCommitIsUpToDate(codebase)); //method being tested
+        String oauthToken = ""; //No token
+        assertTrue(JGitHelper.checkIfLatestCommitIsUpToDate(codebase, oauthToken)); //method being tested
     }
 
 

@@ -61,13 +61,7 @@ public class JGitHelper
         LOG.info("Cloning from " + remoteUrl + " to " + directory);
         //Use default branch (master/main/etc)
 
-        CredentialsProvider credentialsProvider = null;
-        if(!oauthToken.isEmpty()) {
-            // set Auth Utility
-            credentialsProvider = new UsernamePasswordCredentialsProvider("PRIVATE-TOKEN", oauthToken);
-        }
-
-
+        CredentialsProvider credentialsProvider = createCredentialsProvider(oauthToken);
 
         if (branchName.equals(USE_DEFAULT_BRANCH) || branchName.isBlank())
         {
@@ -189,7 +183,7 @@ public class JGitHelper
      * @return true if the codebase's latestCommit is, in fact, the latest commit.
      * Returns false for errors, such as the branch not existing on the remote counterpart.
      */
-    public static boolean checkIfLatestCommitIsUpToDate(Codebase codebase) throws GitAPIException
+    public static boolean checkIfLatestCommitIsUpToDate(Codebase codebase, String oauthToken) throws GitAPIException
     {
         //Validate GitHub url & active branch
         String remoteUrl = codebase.getGitHubUrl();
@@ -202,10 +196,22 @@ public class JGitHelper
         assert codebaseLatestCommit != null;
         assert !codebaseLatestCommit.isBlank();
 
+        CredentialsProvider credentialsProvider = createCredentialsProvider(oauthToken);
+
         //Obtain latest commit hashes from every branch
-        Collection<Ref> refs = Git.lsRemoteRepository()
-                .setRemote(remoteUrl)
-                .call();
+        Collection<Ref> refs;
+        if (credentialsProvider != null) {
+            refs = Git.lsRemoteRepository()
+                    .setRemote(remoteUrl)
+                    .setCredentialsProvider(credentialsProvider)
+                    .call();
+        }
+        else {
+            refs = Git.lsRemoteRepository()
+                    .setRemote(remoteUrl)
+                    //Note lack of setCredentialsProvider call
+                    .call();
+        }
 
         for (Ref ref : refs)
         {
@@ -260,5 +266,19 @@ public class JGitHelper
             LOG.info("git pull failed for repo with URL `"+remoteUrl+"`. Cloning is necessary.");
             JGitHelper.cloneRepository(remoteUrl, branchName, oauthToken);
         }
+    }
+
+    /**
+     * If oauthToken is "", return null.
+     * Otherwise, return a new CredentialsProvider with the oauthToken as the password part.
+     */
+    private static CredentialsProvider createCredentialsProvider(String oauthToken)
+    {
+        CredentialsProvider credentialsProvider = null;
+        if (!oauthToken.isEmpty()) {
+            // set Auth Utility
+            credentialsProvider = new UsernamePasswordCredentialsProvider("PRIVATE-TOKEN", oauthToken);
+        }
+        return credentialsProvider;
     }
 }

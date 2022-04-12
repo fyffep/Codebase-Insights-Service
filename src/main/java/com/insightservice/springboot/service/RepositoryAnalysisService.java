@@ -39,7 +39,7 @@ public class RepositoryAnalysisService
         //if codebase is outdated due to a new commit
         if (codebase == null ||
                 (!codebase.getActiveBranch().equals(branchName) && !branchName.equals(USE_DEFAULT_BRANCH)) ||
-                !JGitHelper.checkIfLatestCommitIsUpToDate(codebase))
+                !JGitHelper.checkIfLatestCommitIsUpToDate(codebase, oauthToken))
         {
             LOG.info("Beginning new Codebase analysis because the repo is new or updated...");
             codebase = extractDataToCodebase(remoteUrl, branchName, oauthToken);
