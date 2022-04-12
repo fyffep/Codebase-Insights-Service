@@ -20,6 +20,7 @@ public class GithubActionsAnalyzerTest {
             FileUtils.deleteDirectory(CLONED_REPO_PATH);
 
         //Clone repo
+        String oauthToken = ""; //No token
         JGitHelper.cloneRepository(VALID_REMOTE_URL, MASTER_BRANCH, oauthToken); //method being tested
 
         //Ensure it exists locally

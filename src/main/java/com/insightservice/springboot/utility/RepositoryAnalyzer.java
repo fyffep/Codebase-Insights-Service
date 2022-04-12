@@ -246,8 +246,7 @@ public class RepositoryAnalyzer {
         while (treeWalk.next()) {
             //Ignore files that are excluded by the .gitignore (i.e. they weren't cloned)
             String path = treeWalk.getPathString();
-            if (treeWalk.getFileMode().equals(FileMode.REGULAR_FILE) && //if path leads to a file
-                    !GitIgnoreFilter.isIgnored(path)) //if file isn't excluded by default
+            if (!GitIgnoreFilter.isIgnored(path)) //if file isn't excluded by default
             {
 
                 // Get FileObject based on path

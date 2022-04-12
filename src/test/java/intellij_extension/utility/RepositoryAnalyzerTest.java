@@ -37,6 +37,7 @@ public class RepositoryAnalyzerTest {
         RepositoryAnalyzer repositoryAnalyzer = null;
         try
         {
+            String oauthToken = ""; //No token
             JGitHelper.cloneRepository(remoteUrl, branchName, oauthToken);
             Codebase codebase = new Codebase();
 
@@ -83,6 +84,7 @@ public class RepositoryAnalyzerTest {
     @Test
     public void constructor_FilePathParameter_Success() {
         assertDoesNotThrow(() -> {
+            String oauthToken = ""; //No token
             JGitHelper.cloneRepository(VALID_REMOTE_URL, MASTER_BRANCH, oauthToken);
             new RepositoryAnalyzer(VALID_REMOTE_URL);
         });

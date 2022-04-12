@@ -29,6 +29,7 @@ public class JGitHelperTest
             FileUtils.deleteDirectory(CLONED_REPO_PATH);
 
         //Clone repo
+        String oauthToken = ""; //No token
         JGitHelper.cloneRepository(VALID_REMOTE_URL, MASTER_BRANCH, oauthToken); //method being tested
 
         //Ensure it exists locally
@@ -38,6 +39,7 @@ public class JGitHelperTest
     @Test
     void cloneRepository_BogusRemoteUrlParameter_ThrowsBadUrlException() {
         assertThrows(BadUrlException.class, () -> {
+            String oauthToken = ""; //No token
             JGitHelper.cloneRepository(BOGUS_REMOTE_URL, MASTER_BRANCH, oauthToken); //method being tested
             new RepositoryAnalyzer(BOGUS_REMOTE_URL); //triggers the exception
         });
@@ -46,6 +48,7 @@ public class JGitHelperTest
     @Test
     void cloneRepository_SneakyRemoteUrlParameter_ThrowsBadUrlException() {
         assertThrows(BadUrlException.class, () -> {
+            String oauthToken = ""; //No token
             JGitHelper.cloneRepository(SNEAKY_REMOTE_URL, MASTER_BRANCH, oauthToken); //method being tested
             new RepositoryAnalyzer(SNEAKY_REMOTE_URL); //triggers the exception
         });
