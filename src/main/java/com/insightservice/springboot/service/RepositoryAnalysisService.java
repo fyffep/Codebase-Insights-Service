@@ -7,7 +7,6 @@ import com.insightservice.springboot.payload.SettingsPayload;
 import com.insightservice.springboot.repository.CodebaseRepository;
 import com.insightservice.springboot.repository.CommitRepository;
 import com.insightservice.springboot.repository.FileObjectRepository;
-import com.insightservice.springboot.utility.GroupFileObjectUtility;
 import com.insightservice.springboot.utility.HeatCalculationUtility;
 import com.insightservice.springboot.utility.ci_analyzer.GithubActionsAnalyzer;
 import com.insightservice.springboot.utility.ci_analyzer.JenkinsAnalyzer;
@@ -32,7 +31,7 @@ public class RepositoryAnalysisService
     CommitRepository commitRepository;
 
 
-    public Codebase getOrCreateCodebase(String remoteUrl, String branchName) throws GitAPIException, IOException
+    public Codebase getOrCreateCodebase(String remoteUrl, String branchName, String oauthToken) throws GitAPIException, IOException
     {
         Codebase codebase = codebaseRepository.findById(remoteUrl).orElse(null);
         //If codebase is new OR
@@ -43,7 +42,7 @@ public class RepositoryAnalysisService
                 !JGitHelper.checkIfLatestCommitIsUpToDate(codebase))
         {
             LOG.info("Beginning new Codebase analysis because the repo is new or updated...");
-            codebase = extractDataToCodebase(remoteUrl, branchName);
+            codebase = extractDataToCodebase(remoteUrl, branchName, oauthToken);
         }
         //Else, up-to-date codebase data exists
         else {
@@ -58,15 +57,16 @@ public class RepositoryAnalysisService
      * All data is placed into a Codebase.
      * Finally, the local repos is deleted from the file system.
      * @param remoteUrl the URL to the home page of a user's GitHub repository
+     * @param oauthToken
      * @return the Codebase containing all heat and file data.
      */
-    private Codebase extractDataToCodebase(String remoteUrl, String branchName) throws GitAPIException, IOException
+    private Codebase extractDataToCodebase(String remoteUrl, String branchName, String oauthToken) throws GitAPIException, IOException
     {
         //Obtain file metrics by analyzing the code base
         RepositoryAnalyzer repositoryAnalyzer = null;
         try
         {
-            JGitHelper.cloneOrUpdateRepository(remoteUrl, branchName);
+            JGitHelper.cloneOrUpdateRepository(remoteUrl, branchName, oauthToken);
             Codebase codebase = new Codebase();
 
             //Calculate heat metrics for every commit

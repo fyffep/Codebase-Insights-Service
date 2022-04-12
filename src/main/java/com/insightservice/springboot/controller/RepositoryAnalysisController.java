@@ -39,7 +39,7 @@ public class RepositoryAnalysisController
 
         LOG.info("Beginning analysis of the repository with URL `"+ remoteUrl +"`...");
         //Analyze Codebase
-        Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(remoteUrl, settingsPayload.getBranchName());
+        Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(remoteUrl, settingsPayload.getBranchName(), oauthToken);
         //3rd-party CI tool analysis for build failures
         repositoryAnalysisService.runCiAnalysis(codebase, settingsPayload);
 
@@ -55,7 +55,7 @@ public class RepositoryAnalysisController
         String remoteUrl = urlPayload.getGithubUrl();
 
         //Retrieve codebase
-        Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(remoteUrl, USE_DEFAULT_BRANCH);
+        Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(remoteUrl, USE_DEFAULT_BRANCH, urlPayload.getGithubOAuthToken());
 
         //Get dashboard data
         DashboardModel dashboardModel = DashboardCalculationUtility.assignDashboardData(codebase);
@@ -72,7 +72,7 @@ public class RepositoryAnalysisController
         String remoteUrl = urlPayload.getGithubUrl();
 
         //Retrieve codebase
-        Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(remoteUrl, urlPayload.getBranchName());
+        Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(remoteUrl, urlPayload.getBranchName(), urlPayload.getGithubOAuthToken());
 
         //Format the files present on the latest commit into a tree structure
         RepoPackage fileTree = FileTreeCreator.createFileTree(

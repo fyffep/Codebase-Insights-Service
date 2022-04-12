@@ -37,7 +37,7 @@ public class RepositoryAnalyzerTest {
         RepositoryAnalyzer repositoryAnalyzer = null;
         try
         {
-            JGitHelper.cloneRepository(remoteUrl, branchName);
+            JGitHelper.cloneRepository(remoteUrl, branchName, oauthToken);
             Codebase codebase = new Codebase();
 
             //Calculate file sizes for every commit
@@ -83,7 +83,7 @@ public class RepositoryAnalyzerTest {
     @Test
     public void constructor_FilePathParameter_Success() {
         assertDoesNotThrow(() -> {
-            JGitHelper.cloneRepository(VALID_REMOTE_URL, MASTER_BRANCH);
+            JGitHelper.cloneRepository(VALID_REMOTE_URL, MASTER_BRANCH, oauthToken);
             new RepositoryAnalyzer(VALID_REMOTE_URL);
         });
     }

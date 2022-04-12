@@ -7,7 +7,6 @@ import com.insightservice.springboot.utility.commit_history.JGitHelper;
 import org.apache.tomcat.util.http.fileupload.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.api.errors.RefNotAdvertisedException;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -30,7 +29,7 @@ public class JGitHelperTest
             FileUtils.deleteDirectory(CLONED_REPO_PATH);
 
         //Clone repo
-        JGitHelper.cloneRepository(VALID_REMOTE_URL, MASTER_BRANCH); //method being tested
+        JGitHelper.cloneRepository(VALID_REMOTE_URL, MASTER_BRANCH, oauthToken); //method being tested
 
         //Ensure it exists locally
         assertTrue(CLONED_REPO_PATH.exists());
@@ -39,7 +38,7 @@ public class JGitHelperTest
     @Test
     void cloneRepository_BogusRemoteUrlParameter_ThrowsBadUrlException() {
         assertThrows(BadUrlException.class, () -> {
-            JGitHelper.cloneRepository(BOGUS_REMOTE_URL, MASTER_BRANCH); //method being tested
+            JGitHelper.cloneRepository(BOGUS_REMOTE_URL, MASTER_BRANCH, oauthToken); //method being tested
             new RepositoryAnalyzer(BOGUS_REMOTE_URL); //triggers the exception
         });
     }
@@ -47,7 +46,7 @@ public class JGitHelperTest
     @Test
     void cloneRepository_SneakyRemoteUrlParameter_ThrowsBadUrlException() {
         assertThrows(BadUrlException.class, () -> {
-            JGitHelper.cloneRepository(SNEAKY_REMOTE_URL, MASTER_BRANCH); //method being tested
+            JGitHelper.cloneRepository(SNEAKY_REMOTE_URL, MASTER_BRANCH, oauthToken); //method being tested
             new RepositoryAnalyzer(SNEAKY_REMOTE_URL); //triggers the exception
         });
     }

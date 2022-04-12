@@ -12,12 +12,12 @@ import java.io.IOException;
 @Service
 public class KnowledgeGraphService
 {
-    public KnowledgeGraph getKnowledgeGraph(String remoteUrl, String branchName) throws GitAPIException, IOException
+    public KnowledgeGraph getKnowledgeGraph(String remoteUrl, String branchName, String oauthToken) throws GitAPIException, IOException
     {
         RepositoryAnalyzer repositoryAnalyzer = null;
         try
         {
-            JGitHelper.cloneOrUpdateRepository(remoteUrl, branchName);
+            JGitHelper.cloneOrUpdateRepository(remoteUrl, branchName, oauthToken);
             repositoryAnalyzer = new RepositoryAnalyzer(remoteUrl);
 
             return repositoryAnalyzer.getKnowledgeGraph();
