@@ -3,8 +3,6 @@ package com.insightservice.springboot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.List;
 
 public class Constants
 {
@@ -32,42 +30,24 @@ public class Constants
 //        X_FILES
 //    }
 
-    // Heat Metric List
-    // Note that this affects HeatMapController::newHeatMetricSelected()
-    public static final String OVERALL_TEXT = "Overall Heat";
-    public static final String FILE_SIZE_TEXT = "File Size";
-    public static final String NUMBER_OF_COMMITS_TEXT = "Number of Commits";
-    public static final String NUMBER_OF_AUTHORS_TEXT = "Number of Authors";
-    public static final String DEGREE_OF_COUPLING_TEXT = "Degree of Coupling to Related Files";
-    public static final String COMMIT_RATIO_TEXT = "Build Failure Commit Ratio";
-    public static final List<String> HEAT_METRIC_OPTIONS = Arrays.asList(
-            OVERALL_TEXT,
-            FILE_SIZE_TEXT,
-            NUMBER_OF_COMMITS_TEXT,
-            NUMBER_OF_AUTHORS_TEXT,
-            DEGREE_OF_COUPLING_TEXT,
-            COMMIT_RATIO_TEXT
-    );
-    // !!!
-    //IMPORTANT: Make sure the HEAT_METRIC_OPTIONS and HeatMetricOptions correspond
-    //because other code (the DashboardModel) iterates through them both with this assumption.
-    // !!!
     public enum HeatMetricOptions {
         OVERALL,
         FILE_SIZE,
         NUM_OF_COMMITS,
         NUM_OF_AUTHORS,
         DEGREE_OF_COUPLING,
-        COMMIT_RATIO,
-        CYCLOMATIC_COMPLEXITY
+        BUILD_FAILURE_SCORE,
+        CYCLOMATIC_COMPLEXITY,
+        CODE_SMELL_SCORE
     }
     public enum HeatMetricOptionsExceptOverall {
         FILE_SIZE,
         NUM_OF_COMMITS,
         NUM_OF_AUTHORS,
         DEGREE_OF_COUPLING,
-        COMMIT_RATIO,
-        CYCLOMATIC_COMPLEXITY
+        BUILD_FAILURE_SCORE,
+        CYCLOMATIC_COMPLEXITY,
+        CODE_SMELL_SCORE
     }
 
     // Heat
@@ -83,8 +63,9 @@ public class Constants
     public static final int WEIGHT_NUM_OF_COMMITS = 500;
     public static final int WEIGHT_NUM_OF_AUTHORS = 500;
     public static final int WEIGHT_DEGREE_OF_COUPLING = 0; //to be implemented
-    public static final int WEIGHT_COMMIT_RATIO = 0; //to be implemented
+    public static final int WEIGHT_BUILD_FAILURE_SCORE = 0; //to be implemented
     public static final int WEIGHT_CYCLOMATIC_COMPLEXITY = 0; //to be implemented
+    public static final int WEIGHT_CODE_SMELL_SCORE = 0;
 
     public static final String SEPARATOR = "~";
     public static final String NO_FILES_EXIST = "No files exist";

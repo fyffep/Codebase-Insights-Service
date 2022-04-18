@@ -83,9 +83,9 @@ public class GithubActionsAnalyzer {
                     LOG.info(fileName +" is a member of our codebase");
 
                     HeatObject heatObject = fileObject.createOrGetHeatObjectAtCommit(commitHash);
-                    int buildHeat = heatObject.getGoodBadCommitRatioHeat();
-                    heatObject.setGoodBadCommitRatioHeat(buildHeat + 1);
-                    LOG.info(fileName+" now has heat "+heatObject.getGoodBadCommitRatioHeat() +" at commit "+ commitHash);
+                    int buildHeat = heatObject.getBuildFailureScoreHeat();
+                    heatObject.setBuildFailureScoreHeat(buildHeat + 1);
+                    LOG.info(fileName+" now has heat "+heatObject.getBuildFailureScoreHeat() +" at commit "+ commitHash);
                 }
             }
         }

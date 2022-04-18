@@ -44,7 +44,7 @@ public class KnowledgeGraphController
         String remoteUrl = settingsPayload.getGithubUrl();
 
         //Retrieve Codebase
-        Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(remoteUrl, USE_DEFAULT_BRANCH, settingsPayload.getGithubOAuthToken());
+        Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(settingsPayload);
 
         TreeMap<String, TreeSet<FileObject>> commitContiguityMap = codebase.getCommitBasedMapGroup();
         if (commitContiguityMap.isEmpty()) commitContiguityMap = GroupFileObjectUtility.groupByCommit(codebase);

@@ -31,23 +31,31 @@ public class RepositoryAnalysisService
     CommitRepository commitRepository;
 
 
-    public Codebase getOrCreateCodebase(String remoteUrl, String branchName, String oauthToken) throws GitAPIException, IOException
+    public Codebase getOrCreateCodebase(SettingsPayload settingsPayload) throws GitAPIException, IOException
     {
-        Codebase codebase = codebaseRepository.findById(remoteUrl).orElse(null);
+        if (settingsPayload == null)
+            throw new IllegalArgumentException("SettingsPayload cannot be null.");
+
+        Codebase codebase = codebaseRepository.findById(settingsPayload.getGithubUrl()).orElse(null);
         //If codebase is new OR
         //if branch changed OR
         //if codebase is outdated due to a new commit
         if (codebase == null ||
-                (!codebase.getActiveBranch().equals(branchName) && !branchName.equals(USE_DEFAULT_BRANCH)) ||
-                !JGitHelper.checkIfLatestCommitIsUpToDate(codebase, oauthToken))
+                (!codebase.getActiveBranch().equals(settingsPayload.getBranchName()) && !settingsPayload.getBranchName().equals(USE_DEFAULT_BRANCH)) ||
+                !JGitHelper.checkIfLatestCommitIsUpToDate(codebase, settingsPayload.getGithubOAuthToken()))
         {
             LOG.info("Beginning new Codebase analysis because the repo is new or updated...");
-            codebase = extractDataToCodebase(remoteUrl, branchName, oauthToken);
+            codebase = extractDataToCodebase(settingsPayload.getGithubUrl(), settingsPayload.getBranchName(), settingsPayload.getGithubOAuthToken());
+            LOG.info("Finished Codebase analysis.");
         }
         //Else, up-to-date codebase data exists
         else {
-            LOG.info("Returning old Codebase data because the repo is up-to-date...");
+            LOG.info("Returning old Codebase data because the repo is up-to-date.");
         }
+
+        //Always run CI since we have no logic to check for updates.
+        //3rd-party CI tool analysis for build failures
+        this.runCiAnalysis(codebase, settingsPayload);
 
         return codebase;
     }
@@ -73,6 +81,7 @@ public class RepositoryAnalysisService
             repositoryAnalyzer = new RepositoryAnalyzer(remoteUrl);
             RepositoryAnalyzer.attachBranchNameList(codebase);
             codebase.selectDefaultBranch();
+            LOG.info("Running RepositoryAnalyzer.attachCodebaseData(...)...");
             RepositoryAnalyzer.attachCodebaseData(codebase);
 
             //TODO run SonarQube here
@@ -105,13 +114,24 @@ public class RepositoryAnalysisService
             //Analyze Jenkins data
             LOG.info("Beginning Jenkins analysis of the repository with URL `"+ remoteUrl +"`...");
             this.attachJenkinsData(codebase, settingsPayload.getCiUsername(), settingsPayload.getApiKey(), settingsPayload.getJobUrl());
+            LOG.info("Finished Jenkins analysis for the repository with URL `"+ remoteUrl +"`.");
+
+            //Compute CI heat, recompute overall heat
+            HeatCalculationUtility.assignHeatLevels(codebase);
+            //Persist codebase
+            saveCodebase(codebase);
         } else if (ciToolChosen.equals(GITHUB_ACTIONS)) {
             //Analyze GitHub Actions data
             LOG.info("Beginning GitHub Actions analysis of the repository with URL `"+ remoteUrl +"`...");
             this.attachGitHubActionsData(codebase, remoteUrl, oAuthToken);
+            LOG.info("Finished GitHub Actions analysis for the repository with URL `"+ remoteUrl +"`.");
+
+            //Compute CI heat, recompute overall heat
+            HeatCalculationUtility.assignHeatLevels(codebase);
+            //Persist codebase
+            saveCodebase(codebase);
         } else {
-            LOG.info("Removing CI analysis for the repository with URL `"+ remoteUrl +"`...");
-            //TODO remove CI credentials from the User, then save User to DB
+            LOG.info("No CI selected.");
         }
     }
 

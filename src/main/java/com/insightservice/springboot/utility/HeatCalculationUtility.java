@@ -2,6 +2,7 @@ package com.insightservice.springboot.utility;
 
 import com.insightservice.springboot.Constants;
 import com.insightservice.springboot.model.codebase.Codebase;
+import com.insightservice.springboot.model.codebase.Commit;
 import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.model.codebase.HeatObject;
 
@@ -20,6 +21,65 @@ public class HeatCalculationUtility
     private HeatCalculationUtility() {
         //This is a utility class
     }
+
+
+    private static void assignHeatLevelsRelativeToAverage(Codebase codebase, HeatMetricOptionsExceptOverall heatMetric)
+    {
+        /*
+        The target heat metric is computed based on how far away the heat level is from the average
+        across all files at a commit. Each commit is treated independently.
+        Since this scales exponentially, max heat is attained when the metric is a certain
+        amount higher than (e.g. 2x as much as) the average.
+         */
+        final double TIMES_HIGHER_THAN_AVERAGE_FOR_MAX_HEAT = 2.0; //2x is arbitrary
+        LOG.info("Calculating heat based on "+heatMetric+"...");
+
+        Set<FileObject> fileObjectSet = codebase.getActiveFileObjects();
+
+        if (fileObjectSet.size() <= 0) {
+            LOG.error("assignHeatLevelsRelativeToAverage(...) failed. 0 files were found in the codebase.");
+            return;
+        }
+
+        //Treat each commit independently
+        for (Commit commit : codebase.getActiveCommits())
+        {
+            //Compute average at every commit
+            double sum = 0;
+            for (FileObject fileObject : fileObjectSet)
+            {
+                HeatObject heatObject = fileObject.getHeatObjectAtCommit(commit.getHash());
+                if (heatObject != null)
+                {
+                    sum += heatObject.getMetricValue(heatMetric);
+                }
+                else
+                    LOG.error("No HeatObject exists for file `"+fileObject.getFilename()+"` at commit "+commit.getHash());
+            }
+            double average = sum / fileObjectSet.size();
+
+
+            //Determine heat based on deviation from average
+            for (FileObject fileObject : fileObjectSet)
+            {
+                HeatObject heatObject = fileObject.getHeatObjectAtCommit(commit.getHash());
+                if (heatObject != null)
+                {
+                    //Use exponential function to calculate heat.
+                    final double valueNeededForMaxHeat = average * TIMES_HIGHER_THAN_AVERAGE_FOR_MAX_HEAT; //A metric must be >= this value to attain max heat.
+                    final double fixedPart = Math.pow(Constants.HEAT_MAX, 1.0 / (valueNeededForMaxHeat - 1));
+                    int heatLevel = (int)((1.0 / fixedPart) * Math.pow(fixedPart, heatObject.getHeatLevel(heatMetric)));
+
+                    heatObject.setHeatLevel(heatMetric, heatLevel);
+                }
+                else
+                    LOG.error("No HeatObject exists for file `"+fileObject.getFilename()+"` at commit "+commit.getHash());
+            }
+        }
+        LOG.info("Finished calculating heat based on "+heatMetric);
+    }
+
+
 
 
     private static void assignHeatLevelsFileSize(Codebase codebase)
@@ -351,7 +411,7 @@ public class HeatCalculationUtility
          * the latest heat levels in this map.
          */
 
-        //assignHeatLevelsFileSize(codebase); //REMOVED until further notice
+        assignHeatLevelsFileSize(codebase);
 
         assignHeatLevelsNumberOfCommits(codebase);
 
@@ -382,7 +442,9 @@ public class HeatCalculationUtility
                     (heatObject.getNumberOfCommitsHeat() * WEIGHT_NUM_OF_COMMITS) +
                     (heatObject.getNumberOfAuthorsHeat() * WEIGHT_NUM_OF_AUTHORS) +
                     (heatObject.getDegreeOfCouplingHeat() * WEIGHT_DEGREE_OF_COUPLING) +
-                    (heatObject.getGoodBadCommitRatioHeat() * WEIGHT_COMMIT_RATIO)
+                    (heatObject.getBuildFailureScoreHeat() * WEIGHT_BUILD_FAILURE_SCORE) +
+                    (heatObject.getCyclomaticComplexityHeat() * WEIGHT_CYCLOMATIC_COMPLEXITY) +
+                    (heatObject.getCodeSmellScoreHeat() * WEIGHT_CODE_SMELL_SCORE)
                 ) / (double) HEAT_WEIGHT_TOTAL
         );
     }
