@@ -23,15 +23,14 @@ public class HeatCalculationUtility
     }
 
 
-    private static void assignHeatLevelsRelativeToAverage(Codebase codebase, HeatMetricOptionsExceptOverall heatMetric)
+    public static void assignHeatLevelsRelativeToAverage(Codebase codebase, HeatMetricOptionsExceptOverall heatMetric)
     {
         /*
-        The target heat metric is computed based on how far away the heat level is from the average
-        across all files at a commit. Each commit is treated independently.
-        Since this scales exponentially, max heat is attained when the metric is a certain
-        amount higher than (e.g. 2x as much as) the average.
+        The target heat metric is computed based on how many standard deviations a metric value is
+        away from the average. Only the latest commit is considered.
          */
-        final double TIMES_HIGHER_THAN_AVERAGE_FOR_MAX_HEAT = 2.0; //2x is arbitrary
+        final double STD_DEVS_FOR_MAX_HEAT = 2.0; //A metric must be at least 2 standard deviations higher than the mean to achieve max heat.
+        final double HEAT_FOR_BEING_AVERAGE = 4.0; //If a metric is exactly equal to the mean, its heat will be this.
         LOG.info("Calculating heat based on "+heatMetric+"...");
 
         Set<FileObject> fileObjectSet = codebase.getActiveFileObjects();
@@ -41,40 +40,59 @@ public class HeatCalculationUtility
             return;
         }
 
-        //Treat each commit independently
-        for (Commit commit : codebase.getActiveCommits())
+        //Compute average
+        String commitHash = codebase.getLatestCommitHash();
+        double sum = 0;
+        for (FileObject fileObject : fileObjectSet)
         {
-            //Compute average at every commit
-            double sum = 0;
-            for (FileObject fileObject : fileObjectSet)
+            HeatObject heatObject = fileObject.getHeatObjectAtCommit(commitHash);
+            if (heatObject != null)
+                sum += heatObject.getMetricValue(heatMetric);
+            else
+                LOG.error("No HeatObject exists for file `"+fileObject.getFilename()+"` at commit "+commitHash);
+        }
+        final double average = sum / fileObjectSet.size();
+        LOG.info("Average metric value at commit "+commitHash+" is "+average);
+
+        //Compute standard deviation
+        double sumOfSquaredDifferences = 0;
+        for (FileObject fileObject : fileObjectSet)
+        {
+            HeatObject heatObject = fileObject.getHeatObjectAtCommit(commitHash);
+            if (heatObject != null)
+                sumOfSquaredDifferences += Math.pow(heatObject.getMetricValue(heatMetric) - average, 2.0);
+            else
+                LOG.error("No HeatObject exists for file `"+fileObject.getFilename()+"` at commit "+commitHash);
+        }
+        final double standardDeviation = Math.sqrt(sumOfSquaredDifferences / fileObjectSet.size());
+        LOG.info("Average value of "+heatMetric+" at commit "+commitHash+" is "+average+" with standard deviation "+standardDeviation);
+
+        final double valueNeededForMaxHeat = average + (STD_DEVS_FOR_MAX_HEAT * standardDeviation); //A metric must be >= this value to attain max heat.
+        System.out.println("valueNeededForMaxHeat="+valueNeededForMaxHeat);
+
+        //Determine heat based on number of standard deviations away from the mean
+        for (FileObject fileObject : fileObjectSet)
+        {
+            HeatObject heatObject = fileObject.getHeatObjectAtCommit(commitHash);
+            if (heatObject != null)
             {
-                HeatObject heatObject = fileObject.getHeatObjectAtCommit(commit.getHash());
-                if (heatObject != null)
-                {
-                    sum += heatObject.getMetricValue(heatMetric);
-                }
-                else
-                    LOG.error("No HeatObject exists for file `"+fileObject.getFilename()+"` at commit "+commit.getHash());
+                double metricValue = heatObject.getMetricValue(heatMetric);
+
+                //Linear growth
+                double stdDevsAwayFromMean = (metricValue - average) / standardDeviation;
+                int heatLevel = (int) Math.round(
+                        ((HEAT_MAX - HEAT_FOR_BEING_AVERAGE) / 2.0) * stdDevsAwayFromMean + HEAT_FOR_BEING_AVERAGE
+                );
+
+                //Exponential growth
+                //final double fixedPart = Math.pow(Constants.HEAT_MAX, 1.0 / (STD_DEVS_FOR_MAX_HEAT - 1));
+                //int heatLevel = (int)((1.0 / fixedPart) * Math.pow(fixedPart, stdDevsAwayFromMean));
+
+                heatObject.setHeatLevel(heatMetric, heatLevel);
+                //System.out.println("Assigned file `"+fileObject.getFilename()+"` heat "+heatLevel+" because it has value "+metricValue +" which is "+stdDevsAwayFromMean+" stdDevsAwayFromMean");
             }
-            double average = sum / fileObjectSet.size();
-
-
-            //Determine heat based on deviation from average
-            for (FileObject fileObject : fileObjectSet)
-            {
-                HeatObject heatObject = fileObject.getHeatObjectAtCommit(commit.getHash());
-                if (heatObject != null)
-                {
-                    //Use exponential function to calculate heat.
-                    final double valueNeededForMaxHeat = average * TIMES_HIGHER_THAN_AVERAGE_FOR_MAX_HEAT; //A metric must be >= this value to attain max heat.
-                    final double fixedPart = Math.pow(Constants.HEAT_MAX, 1.0 / (valueNeededForMaxHeat - 1));
-                    int heatLevel = (int)((1.0 / fixedPart) * Math.pow(fixedPart, heatObject.getHeatLevel(heatMetric)));
-
-                    heatObject.setHeatLevel(heatMetric, heatLevel);
-                }
-                else
-                    LOG.error("No HeatObject exists for file `"+fileObject.getFilename()+"` at commit "+commit.getHash());
-            }
+            else
+                LOG.error("No HeatObject exists for file `"+fileObject.getFilename()+"` at commit "+commitHash);
         }
         LOG.info("Finished calculating heat based on "+heatMetric);
     }
@@ -416,6 +434,14 @@ public class HeatCalculationUtility
         assignHeatLevelsNumberOfCommits(codebase);
 
         assignHeatLevelsNumberOfAuthors(codebase);
+
+        assignHeatLevelsRelativeToAverage(codebase, HeatMetricOptionsExceptOverall.DEGREE_OF_COUPLING);
+
+        assignHeatLevelsRelativeToAverage(codebase, HeatMetricOptionsExceptOverall.BUILD_FAILURE_SCORE);
+
+        assignHeatLevelsRelativeToAverage(codebase, HeatMetricOptionsExceptOverall.CYCLOMATIC_COMPLEXITY);
+
+        assignHeatLevelsRelativeToAverage(codebase, HeatMetricOptionsExceptOverall.CODE_SMELL_SCORE);
 
         //Add more metrics here if more are needed in the future...
 
