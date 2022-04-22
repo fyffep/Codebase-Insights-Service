@@ -384,28 +384,28 @@ public class HeatCalculationUtility
 
     /**
      * Transforms numberOfActiveAuthors into a heat level.
-     * Currently, this scales linearly based on how close numberOfActiveAuthors is to 4.
-     * That is, 4 authors is too many and yields max heat.
+     * Heat decreases linearly based on how close numberOfActiveAuthors is to 4.
+     * That is, 1 author is too few and yields max heat.
+     * Meanwhile, 4 authors is enough and yields min heat.
+     * If team size is less than 4, scale based on the team size.
      */
     private static int activeAuthorsToHeatLevel(int numberOfActiveAuthors, int totalAuthorCount)
     {
-        //Special case for only 1 author in the codebase:
-        if (totalAuthorCount == 1)
-            return 1; //every file should be the same heat for them
+        double numAuthorsForMinHeat = 4.0; //if a file has this many authors or more, it should have min heat. value is arbitrary.
+        if (totalAuthorCount < numAuthorsForMinHeat)
+            numAuthorsForMinHeat = totalAuthorCount;
 
-        //Heat should grow exponentially as the numberOfActiveAuthors approaches totalAuthorCount
-        /*final int n = totalAuthorCount;
-        double base = Math.pow(Constants.HEAT_MAX, 1.0 / (n - 1));
-        return (int)((1.0 / base) * Math.pow(base, numberOfActiveAuthors));*/
+        //Special case for 1 author to avoid division by 0
+        if (numAuthorsForMinHeat <= 1)
+            return HEAT_MAX;
+        if (numberOfActiveAuthors <= 1) //always ensure 1 author yields max heat
+            return HEAT_MAX;
+        if (numberOfActiveAuthors >= numAuthorsForMinHeat)
+            return HEAT_MIN;
 
-        final double NUM_AUTHORS_FOR_MAX_HEAT = 4.0; //if a file has this many authors or more, it should have max heat
-
-        if (numberOfActiveAuthors <= 1)
-            return 1;
-        else if (numberOfActiveAuthors >= NUM_AUTHORS_FOR_MAX_HEAT)
-            return Constants.HEAT_MAX;
-
-        return (int)((numberOfActiveAuthors / NUM_AUTHORS_FOR_MAX_HEAT) * Constants.HEAT_MAX);
+        //This is a line with negative slope. It might look something like:
+        //-10/4 * (x-1) + 10  where x=numberOfActiveAuthors
+        return (int)(-(HEAT_MAX / (numAuthorsForMinHeat - 1)) * (numberOfActiveAuthors - 1)) + HEAT_MAX;
     }
 
     public static int countTotalNumberOfAuthors(Codebase codebase)
