@@ -6,15 +6,11 @@ import com.insightservice.springboot.model.codebase.Codebase;
 import com.insightservice.springboot.utility.AuthUtility;
 import org.apache.tomcat.util.http.fileupload.FileUtils;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.MergeResult;
-import org.eclipse.jgit.api.PullCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.api.errors.RefNotAdvertisedException;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.CredentialsProvider;
-import org.eclipse.jgit.transport.FetchResult;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 
 import java.io.File;
@@ -22,7 +18,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Collection;
-import java.util.Map;
 
 import static com.insightservice.springboot.Constants.*;
 
@@ -54,7 +49,7 @@ public class JGitHelper
         return new File(REPO_STORAGE_DIR + File.separator + repoName);
     }
 
-    public static File cloneRepository(String remoteUrl, String branchName) throws GitAPIException, IOException
+    public static File cloneRepository(String remoteUrl, String branchName, String oauthToken) throws GitAPIException, IOException
     {
         //Make a dir for the cloned repo
         File directory = getPathOfLocalRepository(remoteUrl);
@@ -66,16 +61,7 @@ public class JGitHelper
         LOG.info("Cloning from " + remoteUrl + " to " + directory);
         //Use default branch (master/main/etc)
 
-        // check if auth details have been buffer
-        String username = "visheshdembla@hotmail.com";
-
-        CredentialsProvider credentialsProvider = null;
-        if(AuthUtility.getInstance().getToken(username) != null) {
-            // set Auth Utility
-            credentialsProvider = new UsernamePasswordCredentialsProvider(AuthUtility.getInstance().getToken(username), "");
-        }
-
-
+        CredentialsProvider credentialsProvider = createCredentialsProvider(oauthToken);
 
         if (branchName.equals(USE_DEFAULT_BRANCH) || branchName.isBlank())
         {
@@ -197,7 +183,7 @@ public class JGitHelper
      * @return true if the codebase's latestCommit is, in fact, the latest commit.
      * Returns false for errors, such as the branch not existing on the remote counterpart.
      */
-    public static boolean checkIfLatestCommitIsUpToDate(Codebase codebase) throws GitAPIException
+    public static boolean checkIfLatestCommitIsUpToDate(Codebase codebase, String oauthToken) throws GitAPIException
     {
         //Validate GitHub url & active branch
         String remoteUrl = codebase.getGitHubUrl();
@@ -210,10 +196,22 @@ public class JGitHelper
         assert codebaseLatestCommit != null;
         assert !codebaseLatestCommit.isBlank();
 
+        CredentialsProvider credentialsProvider = createCredentialsProvider(oauthToken);
+
         //Obtain latest commit hashes from every branch
-        Collection<Ref> refs = Git.lsRemoteRepository()
-                .setRemote(remoteUrl)
-                .call();
+        Collection<Ref> refs;
+        if (credentialsProvider != null) {
+            refs = Git.lsRemoteRepository()
+                    .setRemote(remoteUrl)
+                    .setCredentialsProvider(credentialsProvider)
+                    .call();
+        }
+        else {
+            refs = Git.lsRemoteRepository()
+                    .setRemote(remoteUrl)
+                    //Note lack of setCredentialsProvider call
+                    .call();
+        }
 
         for (Ref ref : refs)
         {
@@ -254,18 +252,33 @@ public class JGitHelper
      * Tries to do a git pull to get the latest changes.
      * If that fails, clones the latest version of the repo.
      */
-    public static void cloneOrUpdateRepository(String remoteUrl, String branchName) throws GitAPIException, IOException
+    public static void cloneOrUpdateRepository(String remoteUrl, String branchName, String oauthToken) throws GitAPIException, IOException
     {
         try
         {
             //Try to pull
             JGitHelper.updateLocalRepository(remoteUrl);
+
         }
         catch (IOException | GitAPIException ex)
         {
             //Fresh clone
             LOG.info("git pull failed for repo with URL `"+remoteUrl+"`. Cloning is necessary.");
-            JGitHelper.cloneRepository(remoteUrl, branchName);
+            JGitHelper.cloneRepository(remoteUrl, branchName, oauthToken);
         }
+    }
+
+    /**
+     * If oauthToken is "", return null.
+     * Otherwise, return a new CredentialsProvider with the oauthToken as the password part.
+     */
+    private static CredentialsProvider createCredentialsProvider(String oauthToken)
+    {
+        CredentialsProvider credentialsProvider = null;
+        if (!oauthToken.isEmpty()) {
+            // set Auth Utility
+            credentialsProvider = new UsernamePasswordCredentialsProvider("PRIVATE-TOKEN", oauthToken);
+        }
+        return credentialsProvider;
     }
 }

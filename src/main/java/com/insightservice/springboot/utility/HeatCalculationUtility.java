@@ -2,6 +2,7 @@ package com.insightservice.springboot.utility;
 
 import com.insightservice.springboot.Constants;
 import com.insightservice.springboot.model.codebase.Codebase;
+import com.insightservice.springboot.model.codebase.Commit;
 import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.model.codebase.HeatObject;
 
@@ -20,6 +21,83 @@ public class HeatCalculationUtility
     private HeatCalculationUtility() {
         //This is a utility class
     }
+
+
+    public static void assignHeatLevelsRelativeToAverage(Codebase codebase, HeatMetricOptionsExceptOverall heatMetric)
+    {
+        /*
+        The target heat metric is computed based on how many standard deviations a metric value is
+        away from the average. Only the latest commit is considered.
+         */
+        final double STD_DEVS_FOR_MAX_HEAT = 2.0; //A metric must be at least 2 standard deviations higher than the mean to achieve max heat.
+        final double HEAT_FOR_BEING_AVERAGE = 4.0; //If a metric is exactly equal to the mean, its heat will be this.
+        LOG.info("Calculating heat based on "+heatMetric+"...");
+
+        Set<FileObject> fileObjectSet = codebase.getActiveFileObjects();
+
+        if (fileObjectSet.size() <= 0) {
+            LOG.error("assignHeatLevelsRelativeToAverage(...) failed. 0 files were found in the codebase.");
+            return;
+        }
+
+        //Compute average
+        String commitHash = codebase.getLatestCommitHash();
+        double sum = 0;
+        for (FileObject fileObject : fileObjectSet)
+        {
+            HeatObject heatObject = fileObject.getHeatObjectAtCommit(commitHash);
+            if (heatObject != null)
+                sum += heatObject.getMetricValue(heatMetric);
+            else
+                LOG.error("No HeatObject exists for file `"+fileObject.getFilename()+"` at commit "+commitHash);
+        }
+        final double average = sum / fileObjectSet.size();
+        LOG.info("Average metric value at commit "+commitHash+" is "+average);
+
+        //Compute standard deviation
+        double sumOfSquaredDifferences = 0;
+        for (FileObject fileObject : fileObjectSet)
+        {
+            HeatObject heatObject = fileObject.getHeatObjectAtCommit(commitHash);
+            if (heatObject != null)
+                sumOfSquaredDifferences += Math.pow(heatObject.getMetricValue(heatMetric) - average, 2.0);
+            else
+                LOG.error("No HeatObject exists for file `"+fileObject.getFilename()+"` at commit "+commitHash);
+        }
+        final double standardDeviation = Math.sqrt(sumOfSquaredDifferences / fileObjectSet.size());
+        LOG.info("Average value of "+heatMetric+" at commit "+commitHash+" is "+average+" with standard deviation "+standardDeviation);
+
+        final double valueNeededForMaxHeat = average + (STD_DEVS_FOR_MAX_HEAT * standardDeviation); //A metric must be >= this value to attain max heat.
+        System.out.println("valueNeededForMaxHeat="+valueNeededForMaxHeat);
+
+        //Determine heat based on number of standard deviations away from the mean
+        for (FileObject fileObject : fileObjectSet)
+        {
+            HeatObject heatObject = fileObject.getHeatObjectAtCommit(commitHash);
+            if (heatObject != null)
+            {
+                double metricValue = heatObject.getMetricValue(heatMetric);
+
+                //Linear growth
+                double stdDevsAwayFromMean = (metricValue - average) / standardDeviation;
+                int heatLevel = (int) Math.round(
+                        ((HEAT_MAX - HEAT_FOR_BEING_AVERAGE) / 2.0) * stdDevsAwayFromMean + HEAT_FOR_BEING_AVERAGE
+                );
+
+                //Exponential growth
+                //final double fixedPart = Math.pow(Constants.HEAT_MAX, 1.0 / (STD_DEVS_FOR_MAX_HEAT - 1));
+                //int heatLevel = (int)((1.0 / fixedPart) * Math.pow(fixedPart, stdDevsAwayFromMean));
+
+                heatObject.setHeatLevel(heatMetric, heatLevel);
+                //System.out.println("Assigned file `"+fileObject.getFilename()+"` heat "+heatLevel+" because it has value "+metricValue +" which is "+stdDevsAwayFromMean+" stdDevsAwayFromMean");
+            }
+            else
+                LOG.error("No HeatObject exists for file `"+fileObject.getFilename()+"` at commit "+commitHash);
+        }
+        LOG.info("Finished calculating heat based on "+heatMetric);
+    }
+
+
 
 
     private static void assignHeatLevelsFileSize(Codebase codebase)
@@ -306,28 +384,28 @@ public class HeatCalculationUtility
 
     /**
      * Transforms numberOfActiveAuthors into a heat level.
-     * Currently, this scales linearly based on how close numberOfActiveAuthors is to 4.
-     * That is, 4 authors is too many and yields max heat.
+     * Heat decreases linearly based on how close numberOfActiveAuthors is to 4.
+     * That is, 1 author is too few and yields max heat.
+     * Meanwhile, 4 authors is enough and yields min heat.
+     * If team size is less than 4, scale based on the team size.
      */
     private static int activeAuthorsToHeatLevel(int numberOfActiveAuthors, int totalAuthorCount)
     {
-        //Special case for only 1 author in the codebase:
-        if (totalAuthorCount == 1)
-            return 1; //every file should be the same heat for them
+        double numAuthorsForMinHeat = 4.0; //if a file has this many authors or more, it should have min heat. value is arbitrary.
+        if (totalAuthorCount < numAuthorsForMinHeat)
+            numAuthorsForMinHeat = totalAuthorCount;
 
-        //Heat should grow exponentially as the numberOfActiveAuthors approaches totalAuthorCount
-        /*final int n = totalAuthorCount;
-        double base = Math.pow(Constants.HEAT_MAX, 1.0 / (n - 1));
-        return (int)((1.0 / base) * Math.pow(base, numberOfActiveAuthors));*/
+        //Special case for 1 author to avoid division by 0
+        if (numAuthorsForMinHeat <= 1)
+            return HEAT_MAX;
+        if (numberOfActiveAuthors <= 1) //always ensure 1 author yields max heat
+            return HEAT_MAX;
+        if (numberOfActiveAuthors >= numAuthorsForMinHeat)
+            return HEAT_MIN;
 
-        final double NUM_AUTHORS_FOR_MAX_HEAT = 4.0; //if a file has this many authors or more, it should have max heat
-
-        if (numberOfActiveAuthors <= 1)
-            return 1;
-        else if (numberOfActiveAuthors >= NUM_AUTHORS_FOR_MAX_HEAT)
-            return Constants.HEAT_MAX;
-
-        return (int)((numberOfActiveAuthors / NUM_AUTHORS_FOR_MAX_HEAT) * Constants.HEAT_MAX);
+        //This is a line with negative slope. It might look something like:
+        //-10/4 * (x-1) + 10  where x=numberOfActiveAuthors
+        return (int)(-(HEAT_MAX / (numAuthorsForMinHeat - 1)) * (numberOfActiveAuthors - 1)) + HEAT_MAX;
     }
 
     public static int countTotalNumberOfAuthors(Codebase codebase)
@@ -342,22 +420,9 @@ public class HeatCalculationUtility
     }
 
 
-    private static void assignHeatLevelsOverall(Codebase codebase)
+    public static void assignHeatLevelsOverallOnly(Codebase codebase)
     {
         LOG.info("Calculating overall heat...");
-        /**
-         * Create a map that records the sum of all heat levels from every metric.
-         * After every call to an assignHeatLevels method, we must call sumHeatLevels(...) to record
-         * the latest heat levels in this map.
-         */
-
-        //assignHeatLevelsFileSize(codebase); //REMOVED until further notice
-
-        assignHeatLevelsNumberOfCommits(codebase);
-
-        assignHeatLevelsNumberOfAuthors(codebase);
-
-        //Add more metrics here if more are needed in the future...
 
         //Compute and store overall heat
         Set<FileObject> fileObjectSet = codebase.getActiveFileObjects();
@@ -371,7 +436,24 @@ public class HeatCalculationUtility
 
     public static void assignHeatLevels(Codebase codebase)
     {
-        assignHeatLevelsOverall(codebase);
+
+        assignHeatLevelsFileSize(codebase);
+
+        assignHeatLevelsNumberOfCommits(codebase);
+
+        assignHeatLevelsNumberOfAuthors(codebase);
+
+        assignHeatLevelsRelativeToAverage(codebase, HeatMetricOptionsExceptOverall.DEGREE_OF_COUPLING);
+
+        assignHeatLevelsRelativeToAverage(codebase, HeatMetricOptionsExceptOverall.BUILD_FAILURE_SCORE);
+
+        assignHeatLevelsRelativeToAverage(codebase, HeatMetricOptionsExceptOverall.CYCLOMATIC_COMPLEXITY);
+
+        assignHeatLevelsRelativeToAverage(codebase, HeatMetricOptionsExceptOverall.CODE_SMELL_SCORE);
+
+        //Add more metrics here if more are needed in the future...
+
+        assignHeatLevelsOverallOnly(codebase);
     }
 
     private static void accept(String key, HeatObject heatObject) {
@@ -382,7 +464,9 @@ public class HeatCalculationUtility
                     (heatObject.getNumberOfCommitsHeat() * WEIGHT_NUM_OF_COMMITS) +
                     (heatObject.getNumberOfAuthorsHeat() * WEIGHT_NUM_OF_AUTHORS) +
                     (heatObject.getDegreeOfCouplingHeat() * WEIGHT_DEGREE_OF_COUPLING) +
-                    (heatObject.getGoodBadCommitRatioHeat() * WEIGHT_COMMIT_RATIO)
+                    (heatObject.getBuildFailureScoreHeat() * WEIGHT_BUILD_FAILURE_SCORE) +
+                    (heatObject.getCyclomaticComplexityHeat() * WEIGHT_CYCLOMATIC_COMPLEXITY) +
+                    (heatObject.getCodeSmellScoreHeat() * WEIGHT_CODE_SMELL_SCORE)
                 ) / (double) HEAT_WEIGHT_TOTAL
         );
     }

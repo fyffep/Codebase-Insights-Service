@@ -44,7 +44,7 @@ public class KnowledgeGraphController
         String remoteUrl = settingsPayload.getGithubUrl();
 
         //Retrieve Codebase
-        Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(remoteUrl, USE_DEFAULT_BRANCH);
+        Codebase codebase = repositoryAnalysisService.getOrCreateCodebase(settingsPayload);
 
         TreeMap<String, TreeSet<FileObject>> commitContiguityMap = codebase.getCommitBasedMapGroup();
         if (commitContiguityMap.isEmpty()) commitContiguityMap = GroupFileObjectUtility.groupByCommit(codebase);
@@ -60,7 +60,8 @@ public class KnowledgeGraphController
     @PostMapping("/graph")
     public ResponseEntity<?> getKnowledgeGraph(@RequestBody SettingsPayload settingsPayload, BindingResult result) throws GitAPIException, IOException
     {
-        KnowledgeGraph knowledgeGraph = knowledgeGraphService.getKnowledgeGraph(settingsPayload.getGithubUrl(), settingsPayload.getBranchName());
+        KnowledgeGraph knowledgeGraph = knowledgeGraphService.getKnowledgeGraph(settingsPayload.getGithubUrl(),
+                settingsPayload.getBranchName(), settingsPayload.getGithubOAuthToken());
         LOG.info("Finished creating the Knowledge Graph for repo `"+settingsPayload.getGithubUrl()+"`");
 
         return new ResponseEntity<>(knowledgeGraph, HttpStatus.OK);

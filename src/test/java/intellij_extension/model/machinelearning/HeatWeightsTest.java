@@ -15,10 +15,12 @@ public class HeatWeightsTest
     {
         HeatWeights heatWeights = new HeatWeights(); //method being tested
 
-        assertEquals(Constants.WEIGHT_COMMIT_RATIO,
-                heatWeights.getMetricNameToWeightMap().get(HeatMetricOptionsExceptOverall.COMMIT_RATIO));
+        assertEquals(Constants.WEIGHT_BUILD_FAILURE_SCORE,
+                heatWeights.getMetricNameToWeightMap().get(HeatMetricOptionsExceptOverall.BUILD_FAILURE_SCORE));
         assertEquals(Constants.WEIGHT_CYCLOMATIC_COMPLEXITY,
                 heatWeights.getMetricNameToWeightMap().get(HeatMetricOptionsExceptOverall.CYCLOMATIC_COMPLEXITY));
+        assertEquals(Constants.WEIGHT_CODE_SMELL_SCORE,
+                heatWeights.getMetricNameToWeightMap().get(HeatMetricOptionsExceptOverall.CODE_SMELL_SCORE));
         assertEquals(Constants.WEIGHT_DEGREE_OF_COUPLING,
                 heatWeights.getMetricNameToWeightMap().get(HeatMetricOptionsExceptOverall.DEGREE_OF_COUPLING));
         assertEquals(Constants.WEIGHT_FILE_SIZE,
