@@ -420,14 +420,22 @@ public class HeatCalculationUtility
     }
 
 
-    private static void assignHeatLevelsOverall(Codebase codebase)
+    public static void assignHeatLevelsOverallOnly(Codebase codebase)
     {
         LOG.info("Calculating overall heat...");
-        /**
-         * Create a map that records the sum of all heat levels from every metric.
-         * After every call to an assignHeatLevels method, we must call sumHeatLevels(...) to record
-         * the latest heat levels in this map.
-         */
+
+        //Compute and store overall heat
+        Set<FileObject> fileObjectSet = codebase.getActiveFileObjects();
+        for (FileObject fileObject : fileObjectSet) {
+            LinkedHashMap<String, HeatObject> commitHashToHeatObjectMap = fileObject.getCommitHashToHeatObjectMap();
+            commitHashToHeatObjectMap.forEach(HeatCalculationUtility::accept);
+        }
+        LOG.info("Finished calculating overall heat.");
+    }
+
+
+    public static void assignHeatLevels(Codebase codebase)
+    {
 
         assignHeatLevelsFileSize(codebase);
 
@@ -445,19 +453,7 @@ public class HeatCalculationUtility
 
         //Add more metrics here if more are needed in the future...
 
-        //Compute and store overall heat
-        Set<FileObject> fileObjectSet = codebase.getActiveFileObjects();
-        for (FileObject fileObject : fileObjectSet) {
-            LinkedHashMap<String, HeatObject> commitHashToHeatObjectMap = fileObject.getCommitHashToHeatObjectMap();
-            commitHashToHeatObjectMap.forEach(HeatCalculationUtility::accept);
-        }
-        LOG.info("Finished calculating overall heat.");
-    }
-
-
-    public static void assignHeatLevels(Codebase codebase)
-    {
-        assignHeatLevelsOverall(codebase);
+        assignHeatLevelsOverallOnly(codebase);
     }
 
     private static void accept(String key, HeatObject heatObject) {

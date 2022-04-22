@@ -35,6 +35,8 @@ public class Commit {
 
     private Set<String> fileSet;
 
+    private String gitHubUrl; //tells us which Codebase the Commit belongs to
+
     public Commit(RevCommit revCommit) {
         PersonIdent authorIdent = revCommit.getAuthorIdent();
 
@@ -87,5 +89,13 @@ public class Commit {
 
     public void addFileToSet(String file) {
         fileSet.add(file);
+    }
+
+    public String getGitHubUrl() {
+        return gitHubUrl;
+    }
+
+    public void setGitHubUrl(String gitHubUrl) {
+        this.gitHubUrl = gitHubUrl;
     }
 }

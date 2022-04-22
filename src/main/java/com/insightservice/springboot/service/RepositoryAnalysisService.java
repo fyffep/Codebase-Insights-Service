@@ -51,6 +51,9 @@ public class RepositoryAnalysisService
         //Else, up-to-date codebase data exists
         else {
             LOG.info("Returning old Codebase data because the repo is up-to-date.");
+
+            //Retrieve commits
+            codebase.setActiveCommits(commitRepository.findByGitHubUrl(codebase.getGitHubUrl()));
         }
 
         //Always run CI since we have no logic to check for updates.
@@ -76,6 +79,7 @@ public class RepositoryAnalysisService
         {
             JGitHelper.cloneOrUpdateRepository(remoteUrl, branchName, oauthToken);
             Codebase codebase = new Codebase();
+            codebase.setGitHubUrl(remoteUrl);
 
             //Calculate heat metrics for every commit
             repositoryAnalyzer = new RepositoryAnalyzer(remoteUrl);
@@ -92,7 +96,6 @@ public class RepositoryAnalysisService
             LOG.info("Heat calculations complete. Number of files: " + codebase.getActiveFileObjects().size());
 
             //Persist the codebase
-            codebase.setGitHubUrl(remoteUrl);
             saveCodebase(codebase);
 
             return codebase;
@@ -114,25 +117,25 @@ public class RepositoryAnalysisService
             //Analyze Jenkins data
             LOG.info("Beginning Jenkins analysis of the repository with URL `"+ remoteUrl +"`...");
             this.attachJenkinsData(codebase, settingsPayload.getCiUsername(), settingsPayload.getApiKey(), settingsPayload.getJobUrl());
+            System.out.println("Done! Latest hash="+codebase.getLatestCommitHash()+" heatobj: "+codebase.getFileObjectFromFilename("PatientManagerSpringApplication.java").createOrGetHeatObjectAtCommit(codebase.getLatestCommitHash()) +" score="+codebase.getFileObjectFromFilename("PatientManagerSpringApplication.java").createOrGetHeatObjectAtCommit(codebase.getLatestCommitHash()));
             LOG.info("Finished Jenkins analysis for the repository with URL `"+ remoteUrl +"`.");
-
-            //Compute CI heat, recompute overall heat
-            HeatCalculationUtility.assignHeatLevels(codebase);
-            //Persist codebase
-            saveCodebase(codebase);
-        } else if (ciToolChosen.equals(GITHUB_ACTIONS)) {
+        }
+        else if (ciToolChosen.equals(GITHUB_ACTIONS)) {
             //Analyze GitHub Actions data
             LOG.info("Beginning GitHub Actions analysis of the repository with URL `"+ remoteUrl +"`...");
             this.attachGitHubActionsData(codebase, remoteUrl, oAuthToken);
             LOG.info("Finished GitHub Actions analysis for the repository with URL `"+ remoteUrl +"`.");
-
-            //Compute CI heat, recompute overall heat
-            HeatCalculationUtility.assignHeatLevels(codebase);
-            //Persist codebase
-            saveCodebase(codebase);
-        } else {
-            LOG.info("No CI selected.");
         }
+        else {
+            LOG.info("No CI selected.");
+            return;
+        }
+
+        //Compute CI heat, recompute overall heat
+        HeatCalculationUtility.assignHeatLevelsRelativeToAverage(codebase, HeatMetricOptionsExceptOverall.BUILD_FAILURE_SCORE);
+        HeatCalculationUtility.assignHeatLevelsOverallOnly(codebase);
+        //Persist codebase
+        saveCodebase(codebase);
     }
 
     public void attachJenkinsData(Codebase codebase, String username, String apiKey, String jobUrl) throws IOException {
@@ -156,10 +159,11 @@ public class RepositoryAnalysisService
         for (FileObject fileObject : codebase.getActiveFileObjects()) {
             fileObjectRepository.save(fileObject);
         }
-        LOG.info("Saving Commits to database...");
-        for (Commit commit : codebase.getActiveCommits()) {
-            commitRepository.save(commit);
-        }
+        //Removed for now - we don't need to store commits.
+//        LOG.info("Saving Commits to database...");
+//        for (Commit commit : codebase.getActiveCommits()) {
+//            commitRepository.save(commit);
+//        }
         LOG.info("Saving Codebase to database...");
         codebaseRepository.save(codebase);
         LOG.info("All codebase data successfully saved to database.");

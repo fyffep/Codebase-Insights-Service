@@ -70,6 +70,9 @@ public class Constants
     public static final String SEPARATOR = "~";
     public static final String NO_FILES_EXIST = "No files exist";
 
+
+    public static final int SCORE_PENALTY_AT_BUILD_FAILURE = 10; //how much HeatObject.buildFailureScore increases for each build failure
+
     //Prevent instantiation
     private Constants() {
     }

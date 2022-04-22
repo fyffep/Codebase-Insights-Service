@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.insightservice.springboot.exception.BadUrlException;
 import com.insightservice.springboot.model.CIBuild;
 import com.insightservice.springboot.model.codebase.Codebase;
+import com.insightservice.springboot.model.codebase.Commit;
 import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.model.codebase.HeatObject;
 import org.apache.http.HttpStatus;
@@ -19,6 +20,7 @@ import java.net.UnknownHostException;
 import java.util.*;
 
 import static com.insightservice.springboot.Constants.LOG;
+import static com.insightservice.springboot.Constants.SCORE_PENALTY_AT_BUILD_FAILURE;
 
 
 public class JenkinsAnalyzer
@@ -133,7 +135,7 @@ public class JenkinsAnalyzer
             ((ObjectNode) buildNode).remove("_class"); //allows us to convert to JenkinsBuild class
             CIBuild jenkinsBuild = objectMapper.readValue(buildNode.toString(), CIBuild.class);
 
-            System.out.printf("Jenkins build: `%s`\n", jenkinsBuild.toString());
+            //System.out.printf("Jenkins build: `%s`\n", jenkinsBuild.toString());
             jenkinsBuildList.add(jenkinsBuild);
         }
 
@@ -185,23 +187,47 @@ public class JenkinsAnalyzer
 
             //Store activity in HeatObjects
             for (String fileName : filesInStackTrace) {
-                LOG.info(fileName + " has activity on build #" + buildNumber);
 
                 FileObject fileObject = codebaseToModify.getFileObjectFromFilename(fileName);
-                if (fileObject != null)
-                {
-                    LOG.info(fileName +" is a member of our codebase");
-
-                    HeatObject heatObject = fileObject.createOrGetHeatObjectAtCommit(commitHash);
-                    int buildHeat = heatObject.getBuildFailureScoreHeat();
-                    heatObject.setBuildFailureScoreHeat(buildHeat + 1);
-                    LOG.info(fileName+" now has heat "+heatObject.getBuildFailureScoreHeat() +" at commit "+ commitHash);
+                if (fileObject != null) {
+                    LOG.info(fileName + " has activity on build #" + buildNumber + " (commit " + commitHash + ")");
+                    //Increment scores
+                    commitHash = commitHash.replaceAll("\"", "");
+                    penalizeBuildFailureScores(fileObject, commitHash);
                 }
             }
         }
         //FIXME sometimes the output is too large...usually because of a successful build
         catch (WebClientResponseException ex) {
             LOG.error("Couldn't analyze build #" + buildNumber);
+        }
+    }
+
+    private static void penalizeBuildFailureScores(FileObject fileObject, String commitHashOfFailure)
+    {
+        boolean foundHash = false;
+        int currentPenalty = SCORE_PENALTY_AT_BUILD_FAILURE;
+        for (Map.Entry<String, HeatObject> entry : fileObject.getCommitHashToHeatObjectMap().entrySet())
+        {
+            //Check if this is the commit the build failure occurred on.
+            if (!foundHash && entry.getKey().equals(commitHashOfFailure))
+                foundHash = true; //Now we know all subsequent commits are on or after the build failure.
+
+            //For each commit on and after the build failure
+            if (foundHash)
+            {
+                //Incur currentPenalty points
+                HeatObject heatObject = fileObject.getHeatObjectAtCommit(entry.getKey());
+                if (heatObject == null)
+                {
+                    LOG.error("Jenkins found that file `"+fileObject.getPath()+"` appeared at commit `"+entry.getKey()+"`, but we had no HeatObject for it. Ignoring build failure.");
+                    continue;
+                }
+                heatObject.setBuildFailureScore(heatObject.getBuildFailureScore() + currentPenalty);
+
+                if (currentPenalty > 1)
+                    currentPenalty--;
+            }
         }
     }
 

@@ -126,6 +126,7 @@ public class RepositoryAnalyzer {
                 // Build CodebaseInsight's data object
                 // Extracts: author, email, full/short message, date, hash
                 Commit commitExtract = new Commit(processCommit);
+                commitExtract.setGitHubUrl(codebase.getGitHubUrl());
                 // Add to active commit list
                 codebase.getActiveCommits().add(commitExtract);
                 // Process heat metrics for every file

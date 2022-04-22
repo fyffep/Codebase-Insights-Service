@@ -3,7 +3,6 @@ package com.insightservice.springboot.model.codebase;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.insightservice.springboot.Constants;
 import com.insightservice.springboot.Constants.GroupingMode;
-import com.insightservice.springboot.Constants.HeatMetricOptions;
 import com.insightservice.springboot.utility.GroupFileObjectUtility;
 import com.insightservice.springboot.utility.HeatCalculationUtility;
 import com.insightservice.springboot.utility.RepositoryAnalyzer;
@@ -14,7 +13,6 @@ import org.springframework.data.mongodb.core.mapping.DBRef;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class Codebase
 {
@@ -95,6 +93,10 @@ public class Codebase
 
     public LinkedHashSet<Commit> getActiveCommits() {
         return activeCommits;
+    }
+
+    public void setActiveCommits(LinkedHashSet<Commit> activeCommits) {
+        this.activeCommits = activeCommits;
     }
 
     public HashSet<FileObject> getActiveFileObjects() {
@@ -189,33 +191,6 @@ public class Codebase
     public void setCommitBasedMapGroup(TreeMap<String, TreeSet<FileObject>> commitBasedMapGroup) {
         this.commitBasedMapGroup = commitBasedMapGroup;
     }
-
-    // endregion
-
-
-//    public void newBranchSelected(String branchName) {
-//        // Branch doesn't exist - or we don't know about it some how...
-//        if (!branchNameList.contains(branchName) && !branchName.isEmpty()) {
-//            throw new UnsupportedOperationException(String.format("Branch %s was selected but is not present in branchNameList.", branchName));
-//        }
-//
-//        this.activeBranch = branchName;
-//
-//        // Dump old data and create new sets
-//        activeCommits.clear();
-//        activeCommits = new LinkedHashSet<>();
-//        activeFileObjects.clear();
-//        activeFileObjects = new LinkedHashSet<>();
-//        packageBasedMapGroup = new TreeMap<>();
-//        packageBasedMapGroup.clear();
-//        commitBasedMapGroup = new TreeMap<>();
-//        commitBasedMapGroup.clear();
-//        latestCommitHash = "";
-//
-//        RepositoryAnalyzer.attachCodebaseData(this);
-//
-//        notifyObserversOfBranchChange(getSetOfFiles(), targetCommit, currentGroupingMode, currentHeatMetricOption);
-//    }
 
     //endregion
 }
