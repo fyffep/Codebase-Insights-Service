@@ -16,7 +16,7 @@ public class HeatObject {
     private long fileSize;
     private int numberOfCommits;
     private int numberOfAuthors;
-    private int degreeOfCoupling; //TODO; how many times it appeared in the same commit contiguity group with its coupled files
+    private int degreeOfCoupling; //how many times it appeared in the same commit contiguity group with its coupled files
     private int buildFailureScore; //a measure of how often builds failed *recently*; higher is worse or indicative of more activity.
     private int cyclomaticComplexity;
     private int codeSmellScore;
@@ -25,7 +25,7 @@ public class HeatObject {
     private int fileSizeHeat; //combination of both lineCount and fileSize
     private int numberOfCommitsHeat;
     private int numberOfAuthorsHeat;
-    private int degreeOfCouplingHeat; //to be implemented
+    private int degreeOfCouplingHeat;
     private int buildFailureScoreHeat;
     private int cyclomaticComplexityHeat;
     private int codeSmellScoreHeat;

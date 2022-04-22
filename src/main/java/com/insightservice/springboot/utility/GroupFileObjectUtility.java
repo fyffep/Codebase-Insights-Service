@@ -7,6 +7,7 @@ import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.insightservice.springboot.Constants.LOG;
 import static com.insightservice.springboot.Constants.SEPARATOR;
 
 public class GroupFileObjectUtility {
@@ -29,6 +30,7 @@ public class GroupFileObjectUtility {
      * the number of commits the files were seen together in.
      */
     public static TreeMap<String, TreeSet<FileObject>> groupByCommit(Codebase codebase) {
+        LOG.info("Running GroupFileObjectUtility.groupByCommit(...)...");
         HashSet<FileObject> activeFiles = codebase.getActiveFileObjects();
         TreeMap<String, TreeSet<FileObject>> commitGroupedMap =
                 new TreeMap<>((o1, o2) -> {
@@ -78,7 +80,9 @@ public class GroupFileObjectUtility {
         int degreeOfExternalCoupling = fileObjectSet.size() - 1;
 
         for (FileObject fileObject: fileObjectSet) {
-            fileObject.computeDegreeOfCouplingHeat(degreeOfExternalCoupling, totalExternalFiles);
+            //Record file's degreeOfExternalCoupling at the latest commit only
+            fileObject.getLatestHeatObject().setDegreeOfCoupling(degreeOfExternalCoupling);
+            System.out.println("Assigned "+fileObject.getFilename()+" degreeOfExternalCoupling = "+degreeOfExternalCoupling);
         }
     }
 

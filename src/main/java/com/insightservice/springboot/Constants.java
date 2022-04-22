@@ -60,12 +60,12 @@ public class Constants
     //DEFAULT Heat weights -- the actual heat weights are stored in the DB via the HeatWeights class
     public static final int HEAT_WEIGHT_TOTAL = 1000;
     public static final int WEIGHT_FILE_SIZE = 0; //combination of both lineCount and fileSize
-    public static final int WEIGHT_NUM_OF_COMMITS = 500;
-    public static final int WEIGHT_NUM_OF_AUTHORS = 500;
-    public static final int WEIGHT_DEGREE_OF_COUPLING = 0; //to be implemented
-    public static final int WEIGHT_BUILD_FAILURE_SCORE = 0; //to be implemented
+    public static final int WEIGHT_NUM_OF_COMMITS = 250;
+    public static final int WEIGHT_NUM_OF_AUTHORS = 250;
+    public static final int WEIGHT_DEGREE_OF_COUPLING = 250;
+    public static final int WEIGHT_BUILD_FAILURE_SCORE = 250;
     public static final int WEIGHT_CYCLOMATIC_COMPLEXITY = 0; //to be implemented
-    public static final int WEIGHT_CODE_SMELL_SCORE = 0;
+    public static final int WEIGHT_CODE_SMELL_SCORE = 0; //to be implemented
 
     public static final String SEPARATOR = "~";
     public static final String NO_FILES_EXIST = "No files exist";

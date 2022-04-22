@@ -7,6 +7,7 @@ import com.insightservice.springboot.payload.SettingsPayload;
 import com.insightservice.springboot.repository.CodebaseRepository;
 import com.insightservice.springboot.repository.CommitRepository;
 import com.insightservice.springboot.repository.FileObjectRepository;
+import com.insightservice.springboot.utility.GroupFileObjectUtility;
 import com.insightservice.springboot.utility.HeatCalculationUtility;
 import com.insightservice.springboot.utility.ci_analyzer.GithubActionsAnalyzer;
 import com.insightservice.springboot.utility.ci_analyzer.JenkinsAnalyzer;
@@ -87,6 +88,7 @@ public class RepositoryAnalysisService
             codebase.selectDefaultBranch();
             LOG.info("Running RepositoryAnalyzer.attachCodebaseData(...)...");
             RepositoryAnalyzer.attachCodebaseData(codebase);
+            GroupFileObjectUtility.groupByCommit(codebase); //this sets the degree of external coupling for each file
 
             //TODO run SonarQube here
 
