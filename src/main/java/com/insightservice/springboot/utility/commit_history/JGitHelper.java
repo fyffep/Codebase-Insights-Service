@@ -5,6 +5,7 @@ import com.insightservice.springboot.exception.BadUrlException;
 import com.insightservice.springboot.model.codebase.Codebase;
 import com.insightservice.springboot.utility.AuthUtility;
 import org.apache.tomcat.util.http.fileupload.FileUtils;
+import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Ref;
@@ -49,7 +50,7 @@ public class JGitHelper
         return new File(REPO_STORAGE_DIR + File.separator + repoName);
     }
 
-    public static File cloneRepository(String remoteUrl, String branchName, String oauthToken) throws GitAPIException, IOException
+    public static File cloneRepository(String remoteUrl, String branchName, String personalAccessToken) throws GitAPIException, IOException
     {
         //Make a dir for the cloned repo
         File directory = getPathOfLocalRepository(remoteUrl);
@@ -59,10 +60,10 @@ public class JGitHelper
 
         //Clone
         LOG.info("Cloning from " + remoteUrl + " to " + directory);
-        //Use default branch (master/main/etc)
 
-        CredentialsProvider credentialsProvider = createCredentialsProvider(oauthToken);
+        CredentialsProvider credentialsProvider = createCredentialsProvider(personalAccessToken);
 
+        //If user wants to use default branch (master/main/etc)
         if (branchName.equals(USE_DEFAULT_BRANCH) || branchName.isBlank())
         {
             LOG.info("No branch specified.");
@@ -183,7 +184,7 @@ public class JGitHelper
      * @return true if the codebase's latestCommit is, in fact, the latest commit.
      * Returns false for errors, such as the branch not existing on the remote counterpart.
      */
-    public static boolean checkIfLatestCommitIsUpToDate(Codebase codebase, String oauthToken) throws GitAPIException
+    public static boolean checkIfLatestCommitIsUpToDate(Codebase codebase, String personalAccessToken) throws GitAPIException
     {
         //Validate GitHub url & active branch
         String remoteUrl = codebase.getGitHubUrl();
@@ -196,7 +197,7 @@ public class JGitHelper
         assert codebaseLatestCommit != null;
         assert !codebaseLatestCommit.isBlank();
 
-        CredentialsProvider credentialsProvider = createCredentialsProvider(oauthToken);
+        CredentialsProvider credentialsProvider = createCredentialsProvider(personalAccessToken);
 
         //Obtain latest commit hashes from every branch
         Collection<Ref> refs;
@@ -252,7 +253,7 @@ public class JGitHelper
      * Tries to do a git pull to get the latest changes.
      * If that fails, clones the latest version of the repo.
      */
-    public static void cloneOrUpdateRepository(String remoteUrl, String branchName, String oauthToken) throws GitAPIException, IOException
+    public static void cloneOrUpdateRepository(String remoteUrl, String branchName, String personalAccessToken) throws GitAPIException, IOException
     {
         try
         {
@@ -264,20 +265,20 @@ public class JGitHelper
         {
             //Fresh clone
             LOG.info("git pull failed for repo with URL `"+remoteUrl+"`. Cloning is necessary.");
-            JGitHelper.cloneRepository(remoteUrl, branchName, oauthToken);
+            JGitHelper.cloneRepository(remoteUrl, branchName, personalAccessToken);
         }
     }
 
     /**
-     * If oauthToken is "", return null.
-     * Otherwise, return a new CredentialsProvider with the oauthToken as the password part.
+     * If personalAccessToken is null or "", return null.
+     * Otherwise, return a new CredentialsProvider with the personalAccessToken as the password part.
      */
-    private static CredentialsProvider createCredentialsProvider(String oauthToken)
+    private static CredentialsProvider createCredentialsProvider(String personalAccessToken)
     {
         CredentialsProvider credentialsProvider = null;
-        if (!oauthToken.isEmpty()) {
+        if (personalAccessToken == null || !personalAccessToken.isEmpty()) {
             // set Auth Utility
-            credentialsProvider = new UsernamePasswordCredentialsProvider("PRIVATE-TOKEN", oauthToken);
+            credentialsProvider = new UsernamePasswordCredentialsProvider("PRIVATE-TOKEN", personalAccessToken);
         }
         return credentialsProvider;
     }

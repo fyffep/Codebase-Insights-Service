@@ -82,7 +82,7 @@ public class GroupFileObjectUtility {
         for (FileObject fileObject: fileObjectSet) {
             //Record file's degreeOfExternalCoupling at the latest commit only
             fileObject.getLatestHeatObject().setDegreeOfCoupling(degreeOfExternalCoupling);
-            System.out.println("Assigned "+fileObject.getFilename()+" degreeOfExternalCoupling = "+degreeOfExternalCoupling);
+            //System.out.println("Assigned "+fileObject.getFilename()+" degreeOfExternalCoupling = "+degreeOfExternalCoupling);
         }
     }
 
