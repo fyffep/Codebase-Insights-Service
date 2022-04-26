@@ -28,8 +28,6 @@ public class RepositoryAnalysisService
     CodebaseRepository codebaseRepository;
     @Autowired
     FileObjectRepository fileObjectRepository;
-    @Autowired
-    CommitRepository commitRepository;
 
 
     public Codebase getOrCreateCodebase(SettingsPayload settingsPayload) throws GitAPIException, IOException
@@ -52,9 +50,6 @@ public class RepositoryAnalysisService
         //Else, up-to-date codebase data exists
         else {
             LOG.info("Returning old Codebase data because the repo is up-to-date.");
-
-            //Retrieve commits
-            codebase.setActiveCommits(commitRepository.findByGitHubUrl(codebase.getGitHubUrl()));
         }
 
         //Always run CI since we have no logic to check for updates.
@@ -162,10 +157,10 @@ public class RepositoryAnalysisService
             fileObjectRepository.save(fileObject);
         }
         //Removed for now - we don't need to store commits.
-        LOG.info("Saving Commits to database...");
-        for (Commit commit : codebase.getActiveCommits()) {
-            commitRepository.save(commit);
-        }
+//        LOG.info("Saving Commits to database...");
+//        for (Commit commit : codebase.getActiveCommits()) {
+//            commitRepository.save(commit);
+//        }
         LOG.info("Saving Codebase to database...");
         codebaseRepository.save(codebase);
         LOG.info("All codebase data successfully saved to database.");
