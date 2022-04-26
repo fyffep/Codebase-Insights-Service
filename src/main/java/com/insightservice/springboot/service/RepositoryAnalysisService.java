@@ -162,10 +162,10 @@ public class RepositoryAnalysisService
             fileObjectRepository.save(fileObject);
         }
         //Removed for now - we don't need to store commits.
-//        LOG.info("Saving Commits to database...");
-//        for (Commit commit : codebase.getActiveCommits()) {
-//            commitRepository.save(commit);
-//        }
+        LOG.info("Saving Commits to database...");
+        for (Commit commit : codebase.getActiveCommits()) {
+            commitRepository.save(commit);
+        }
         LOG.info("Saving Codebase to database...");
         codebaseRepository.save(codebase);
         LOG.info("All codebase data successfully saved to database.");
