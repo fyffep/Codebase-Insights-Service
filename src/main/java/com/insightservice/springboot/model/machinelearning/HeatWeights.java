@@ -42,8 +42,9 @@ public class HeatWeights
         metricNameToWeightMap.put(HeatMetricOptionsExceptOverall.NUM_OF_COMMITS, Constants.WEIGHT_NUM_OF_COMMITS);
         metricNameToWeightMap.put(HeatMetricOptionsExceptOverall.NUM_OF_AUTHORS, Constants.WEIGHT_NUM_OF_AUTHORS);
         metricNameToWeightMap.put(HeatMetricOptionsExceptOverall.DEGREE_OF_COUPLING, Constants.WEIGHT_DEGREE_OF_COUPLING);
-        metricNameToWeightMap.put(HeatMetricOptionsExceptOverall.COMMIT_RATIO, Constants.WEIGHT_COMMIT_RATIO);
+        metricNameToWeightMap.put(HeatMetricOptionsExceptOverall.BUILD_FAILURE_SCORE, Constants.WEIGHT_BUILD_FAILURE_SCORE);
         metricNameToWeightMap.put(HeatMetricOptionsExceptOverall.CYCLOMATIC_COMPLEXITY, Constants.WEIGHT_CYCLOMATIC_COMPLEXITY);
+        metricNameToWeightMap.put(HeatMetricOptionsExceptOverall.CODE_SMELL_SCORE, Constants.WEIGHT_CODE_SMELL_SCORE);
     }
 
 

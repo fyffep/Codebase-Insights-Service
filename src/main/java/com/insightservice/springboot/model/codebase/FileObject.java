@@ -1,7 +1,6 @@
 package com.insightservice.springboot.model.codebase;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.insightservice.springboot.Constants;
 import com.insightservice.springboot.model.file_tree.RepoTreeNode;
 import com.insightservice.springboot.utility.RepositoryAnalyzer;
 import org.springframework.data.annotation.Id;
@@ -28,7 +27,6 @@ public class FileObject implements RepoTreeNode
     private String filename;
     @JsonIgnore
     private LinkedHashMap<String, HeatObject> commitHashToHeatObjectMap;
-    private int degreeOfCouplingHeat;
     private HeatObject latestHeatObject; //heat levels at the latest commit
     private Set<String> uniqueAuthors;
     private Set<String> uniqueAuthorEmails;
@@ -54,7 +52,6 @@ public class FileObject implements RepoTreeNode
         this.uniqueAuthorEmails = new LinkedHashSet<>();
         this.latestCommitInTreeWalk = "";
         this.latestCommitInDiffEntryList = "";
-        this.degreeOfCouplingHeat = 0;
     }
     // endregion
 
@@ -103,22 +100,6 @@ public class FileObject implements RepoTreeNode
         this.latestCommitInDiffEntryList = latestCommitInDiffEntryList;
     }
 
-    public int getDegreeOfCouplingHeat() {
-        return degreeOfCouplingHeat;
-    }
-
-    /**
-     * This method computes degree of external coupling heat based on degreeOfExternalCoupling
-     * derived from group by commit contiguity logic.
-     * If a file forms a group with 10 other files in the codebase which is also the total number of active files,
-     * the file would have MAX HEAT.
-     * @param degreeOfExternalCoupling value for the number of files forming a group with the current.
-     * @param totalExternalFiles value for the total number of active files in the codebase except the current.
-     */
-    public void computeDegreeOfCouplingHeat(int degreeOfExternalCoupling, int totalExternalFiles) {
-        this.degreeOfCouplingHeat = (int) ((degreeOfExternalCoupling * 1.0/totalExternalFiles) * Constants.HEAT_MAX);
-    }
-
 
     // Find/return existing or create new HeatObject for commitHash
     public HeatObject createOrGetHeatObjectAtCommit(String commitHash) {
@@ -157,31 +138,6 @@ public class FileObject implements RepoTreeNode
 
     public void setLatestHeatObject(HeatObject latestHeatObject) {
         this.latestHeatObject = latestHeatObject;
-    }
-
-    public String getHeatMetricString(HeatObject heatObject, Constants.HeatMetricOptions heatMetricOption) {
-        String text = "";
-        switch (heatMetricOption) {
-            case FILE_SIZE:
-                text = String.format("%s: %d characters", Constants.FILE_SIZE_TEXT, heatObject.getFileSize());
-                break;
-            case NUM_OF_AUTHORS:
-                text = String.format("%s: %d", Constants.NUMBER_OF_AUTHORS_TEXT, heatObject.getNumberOfAuthors());
-                break;
-            case NUM_OF_COMMITS:
-                text = String.format("%s: %d", Constants.NUMBER_OF_COMMITS_TEXT, heatObject.getNumberOfCommits());
-                break;
-            case OVERALL:
-                //Overall shows all of the above metrics
-                text = String.format("%s: %d characters\n%s: %d\n%s: %d",
-                        Constants.FILE_SIZE_TEXT, heatObject.getFileSize(),
-                        Constants.NUMBER_OF_AUTHORS_TEXT, heatObject.getNumberOfAuthors(),
-                        Constants.NUMBER_OF_COMMITS_TEXT, heatObject.getNumberOfCommits());
-                break;
-            default:
-                throw new UnsupportedOperationException("Heat Metric Option is getHeatMetricString or not implemented for this method.");
-        }
-        return text;
     }
 
     @Override

@@ -126,6 +126,7 @@ public class RepositoryAnalyzer {
                 // Build CodebaseInsight's data object
                 // Extracts: author, email, full/short message, date, hash
                 Commit commitExtract = new Commit(processCommit);
+                commitExtract.setGitHubUrl(codebase.getGitHubUrl());
                 // Add to active commit list
                 codebase.getActiveCommits().add(commitExtract);
                 // Process heat metrics for every file
@@ -246,8 +247,7 @@ public class RepositoryAnalyzer {
         while (treeWalk.next()) {
             //Ignore files that are excluded by the .gitignore (i.e. they weren't cloned)
             String path = treeWalk.getPathString();
-            if (treeWalk.getFileMode().equals(FileMode.REGULAR_FILE) && //if path leads to a file
-                    !GitIgnoreFilter.isIgnored(path)) //if file isn't excluded by default
+            if (!GitIgnoreFilter.isIgnored(path)) //if file isn't excluded by default
             {
 
                 // Get FileObject based on path

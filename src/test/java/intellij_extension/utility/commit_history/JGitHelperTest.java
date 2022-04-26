@@ -7,7 +7,6 @@ import com.insightservice.springboot.utility.commit_history.JGitHelper;
 import org.apache.tomcat.util.http.fileupload.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.api.errors.RefNotAdvertisedException;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -30,7 +29,8 @@ public class JGitHelperTest
             FileUtils.deleteDirectory(CLONED_REPO_PATH);
 
         //Clone repo
-        JGitHelper.cloneRepository(VALID_REMOTE_URL, MASTER_BRANCH); //method being tested
+        String oauthToken = ""; //No token
+        JGitHelper.cloneRepository(VALID_REMOTE_URL, MASTER_BRANCH, oauthToken); //method being tested
 
         //Ensure it exists locally
         assertTrue(CLONED_REPO_PATH.exists());
@@ -39,7 +39,8 @@ public class JGitHelperTest
     @Test
     void cloneRepository_BogusRemoteUrlParameter_ThrowsBadUrlException() {
         assertThrows(BadUrlException.class, () -> {
-            JGitHelper.cloneRepository(BOGUS_REMOTE_URL, MASTER_BRANCH); //method being tested
+            String oauthToken = ""; //No token
+            JGitHelper.cloneRepository(BOGUS_REMOTE_URL, MASTER_BRANCH, oauthToken); //method being tested
             new RepositoryAnalyzer(BOGUS_REMOTE_URL); //triggers the exception
         });
     }
@@ -47,7 +48,8 @@ public class JGitHelperTest
     @Test
     void cloneRepository_SneakyRemoteUrlParameter_ThrowsBadUrlException() {
         assertThrows(BadUrlException.class, () -> {
-            JGitHelper.cloneRepository(SNEAKY_REMOTE_URL, MASTER_BRANCH); //method being tested
+            String oauthToken = ""; //No token
+            JGitHelper.cloneRepository(SNEAKY_REMOTE_URL, MASTER_BRANCH, oauthToken); //method being tested
             new RepositoryAnalyzer(SNEAKY_REMOTE_URL); //triggers the exception
         });
     }
@@ -86,7 +88,8 @@ public class JGitHelperTest
         codebase.setActiveBranch(MASTER_BRANCH);
         codebase.setLatestCommitHash("c60e6975fb2c60810cd2eedf31bf5075b3d02cd4"); //you should update with the latest commit if this fails
 
-        assertTrue(JGitHelper.checkIfLatestCommitIsUpToDate(codebase)); //method being tested
+        String oauthToken = ""; //No token
+        assertTrue(JGitHelper.checkIfLatestCommitIsUpToDate(codebase, oauthToken)); //method being tested
     }
 
     @Test
@@ -96,7 +99,8 @@ public class JGitHelperTest
         codebase.setActiveBranch(MASTER_BRANCH);
         codebase.setLatestCommitHash("4c98689dd08627fed0e5e4363efd101d6e4cb1c0"); //some random hash in our commit history
 
-        assertFalse(JGitHelper.checkIfLatestCommitIsUpToDate(codebase)); //method being tested
+        String oauthToken = ""; //No token
+        assertFalse(JGitHelper.checkIfLatestCommitIsUpToDate(codebase, oauthToken)); //method being tested
     }
 
     @Test
@@ -106,7 +110,8 @@ public class JGitHelperTest
         codebase.setActiveBranch("ui-development-commit-history");
         codebase.setLatestCommitHash("5c92c6f0818dd2b139cfb1f054c89ef7797dbe09"); //this is the final commit on this dead branch
 
-        assertTrue(JGitHelper.checkIfLatestCommitIsUpToDate(codebase)); //method being tested
+        String oauthToken = ""; //No token
+        assertTrue(JGitHelper.checkIfLatestCommitIsUpToDate(codebase, oauthToken)); //method being tested
     }
 
 

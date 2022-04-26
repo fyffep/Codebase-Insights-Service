@@ -1,8 +1,11 @@
 package intellij_extension.utility;
 
+import com.insightservice.springboot.Constants;
 import com.insightservice.springboot.model.codebase.Codebase;
 import com.insightservice.springboot.model.codebase.FileObject;
+import com.insightservice.springboot.model.codebase.HeatObject;
 import com.insightservice.springboot.utility.GroupFileObjectUtility;
+import com.insightservice.springboot.utility.HeatCalculationUtility;
 import org.junit.jupiter.api.Test;
 
 import java.util.Comparator;
@@ -33,6 +36,9 @@ public class GroupFileObjectUtilityTest {
         codebase.createOrGetFileObjectFromPath(PROJECT_ROOT + "\\package3\\myfileF.java");
         codebase.createOrGetFileObjectFromPath(PROJECT_ROOT + "\\package3\\package4\\myfileG.java");
         codebase.createOrGetFileObjectFromPath(PROJECT_ROOT + "\\package5\\package6\\myfileH.java");
+
+        for (FileObject fileObject : codebase.getActiveFileObjects())
+            fileObject.setLatestHeatObject(new HeatObject());
 
         Map<String, TreeSet<FileObject>> packageToFileMap = GroupFileObjectUtility.groupByPackage(codebase.getProjectRootPath(), codebase.getActiveFileObjects()); //method being tested
 
@@ -74,6 +80,9 @@ public class GroupFileObjectUtilityTest {
         FileObject fileObject4 = codebase.createOrGetFileObjectFromPath("File4.java");
         FileObject fileObject5 = codebase.createOrGetFileObjectFromPath("File5.java");
         FileObject fileObject6 = codebase.createOrGetFileObjectFromPath("File6.java");
+
+        for (FileObject fileObject : codebase.getActiveFileObjects())
+            fileObject.setLatestHeatObject(new HeatObject());
 
         fileObject1.getCommitHashToHeatObjectMap().put("C1", null);
         fileObject1.getCommitHashToHeatObjectMap().put("C3", null);
@@ -117,11 +126,11 @@ public class GroupFileObjectUtilityTest {
         assertTrue(packageToFileMap.containsValue(pair2));
         assertTrue(packageToFileMap.containsValue(pair3));
 
-        assertEquals(2, fileObject1.getDegreeOfCouplingHeat());
-        assertEquals(4, fileObject2.getDegreeOfCouplingHeat());
-        assertEquals(4, fileObject3.getDegreeOfCouplingHeat());
-        assertEquals(2, fileObject4.getDegreeOfCouplingHeat());
-        assertEquals(0, fileObject5.getDegreeOfCouplingHeat());
-        assertEquals(4, fileObject6.getDegreeOfCouplingHeat());
+        assertEquals(1, fileObject1.getLatestHeatObject().getDegreeOfCoupling());
+        assertEquals(2, fileObject2.getLatestHeatObject().getDegreeOfCoupling());
+        assertEquals(2, fileObject3.getLatestHeatObject().getDegreeOfCoupling());
+        assertEquals(1, fileObject4.getLatestHeatObject().getDegreeOfCoupling());
+        assertEquals(0, fileObject5.getLatestHeatObject().getDegreeOfCoupling());
+        assertEquals(2, fileObject6.getLatestHeatObject().getDegreeOfCoupling());
     }
 }

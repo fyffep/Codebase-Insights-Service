@@ -1,12 +1,13 @@
-package com.insightservice.springboot.utility;
+package com.insightservice.springboot.utility.ci_analyzer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.insightservice.springboot.exception.BadUrlException;
-import com.insightservice.springboot.model.JenkinsBuild;
+import com.insightservice.springboot.model.CIBuild;
 import com.insightservice.springboot.model.codebase.Codebase;
+import com.insightservice.springboot.model.codebase.Commit;
 import com.insightservice.springboot.model.codebase.FileObject;
 import com.insightservice.springboot.model.codebase.HeatObject;
 import org.apache.http.HttpStatus;
@@ -19,6 +20,7 @@ import java.net.UnknownHostException;
 import java.util.*;
 
 import static com.insightservice.springboot.Constants.LOG;
+import static com.insightservice.springboot.Constants.SCORE_PENALTY_AT_BUILD_FAILURE;
 
 
 public class JenkinsAnalyzer
@@ -107,7 +109,7 @@ public class JenkinsAnalyzer
      * Requests the most recent builds from Jenkins and stores them in a list of JenkinsBuilds.
      * @param maxCount the inclusive maximum number of most recent builds to fetch
      */
-    private static List<JenkinsBuild> getListOfRecentBuilds(int maxCount, String username, String apiKey, String jobUrl) throws IOException, WebClientRequestException
+    private static List<CIBuild> getListOfRecentBuilds(int maxCount, String username, String apiKey, String jobUrl) throws IOException, WebClientRequestException
     {
         if (maxCount < 1)
             throw new IllegalArgumentException("maxCount must be at least one");
@@ -122,7 +124,7 @@ public class JenkinsAnalyzer
                 .bodyToMono(String.class)
                 .block();
 
-        List<JenkinsBuild> jenkinsBuildList = new ArrayList<>();
+        List<CIBuild> jenkinsBuildList = new ArrayList<>();
 
         final ObjectNode root = objectMapper.readValue(response, ObjectNode.class);
         final JsonNode jobsArrayJson = root.get("jobs");
@@ -131,9 +133,9 @@ public class JenkinsAnalyzer
         JsonNode buildArrayJson = job0.get("builds");
         for (JsonNode buildNode : buildArrayJson) {
             ((ObjectNode) buildNode).remove("_class"); //allows us to convert to JenkinsBuild class
-            JenkinsBuild jenkinsBuild = objectMapper.readValue(buildNode.toString(), JenkinsBuild.class);
+            CIBuild jenkinsBuild = objectMapper.readValue(buildNode.toString(), CIBuild.class);
 
-            System.out.printf("Jenkins build: `%s`\n", jenkinsBuild.toString());
+            //System.out.printf("Jenkins build: `%s`\n", jenkinsBuild.toString());
             jenkinsBuildList.add(jenkinsBuild);
         }
 
@@ -185,23 +187,47 @@ public class JenkinsAnalyzer
 
             //Store activity in HeatObjects
             for (String fileName : filesInStackTrace) {
-                LOG.info(fileName + " has activity on build #" + buildNumber);
 
                 FileObject fileObject = codebaseToModify.getFileObjectFromFilename(fileName);
-                if (fileObject != null)
-                {
-                    LOG.info(fileName +" is a member of our codebase");
-
-                    HeatObject heatObject = fileObject.createOrGetHeatObjectAtCommit(commitHash);
-                    int buildHeat = heatObject.getGoodBadCommitRatioHeat();
-                    heatObject.setGoodBadCommitRatioHeat(buildHeat + 1);
-                    LOG.info(fileName+" now has heat "+heatObject.getGoodBadCommitRatioHeat() +" at commit "+ commitHash);
+                if (fileObject != null) {
+                    LOG.info(fileName + " has activity on build #" + buildNumber + " (commit " + commitHash + ")");
+                    //Increment scores
+                    commitHash = commitHash.replaceAll("\"", "");
+                    penalizeBuildFailureScores(fileObject, commitHash);
                 }
             }
         }
         //FIXME sometimes the output is too large...usually because of a successful build
         catch (WebClientResponseException ex) {
             LOG.error("Couldn't analyze build #" + buildNumber);
+        }
+    }
+
+    private static void penalizeBuildFailureScores(FileObject fileObject, String commitHashOfFailure)
+    {
+        boolean foundHash = false;
+        int currentPenalty = SCORE_PENALTY_AT_BUILD_FAILURE;
+        for (Map.Entry<String, HeatObject> entry : fileObject.getCommitHashToHeatObjectMap().entrySet())
+        {
+            //Check if this is the commit the build failure occurred on.
+            if (!foundHash && entry.getKey().equals(commitHashOfFailure))
+                foundHash = true; //Now we know all subsequent commits are on or after the build failure.
+
+            //For each commit on and after the build failure
+            if (foundHash)
+            {
+                //Incur currentPenalty points
+                HeatObject heatObject = fileObject.getHeatObjectAtCommit(entry.getKey());
+                if (heatObject == null)
+                {
+                    LOG.error("Jenkins found that file `"+fileObject.getPath()+"` appeared at commit `"+entry.getKey()+"`, but we had no HeatObject for it. Ignoring build failure.");
+                    continue;
+                }
+                heatObject.setBuildFailureScore(heatObject.getBuildFailureScore() + currentPenalty);
+
+                if (currentPenalty > 1)
+                    currentPenalty--;
+            }
         }
     }
 
@@ -227,8 +253,8 @@ public class JenkinsAnalyzer
             //Get all the recent builds. The build numbers could be noncontiguous, like 18, 16, 15, 14, 10, 9
             final int NUMBER_OF_BUILDS_TO_CHECK = 50;
             int remainingBuildsToCheck = NUMBER_OF_BUILDS_TO_CHECK;
-            List<JenkinsBuild> recentBuildList = getListOfRecentBuilds(Integer.MAX_VALUE, username, apiKey, jobUrl);
-            for (JenkinsBuild jenkinsBuild : recentBuildList) {
+            List<CIBuild> recentBuildList = getListOfRecentBuilds(Integer.MAX_VALUE, username, apiKey, jobUrl);
+            for (CIBuild jenkinsBuild : recentBuildList) {
                 if (!jenkinsBuild.isSuccessful()) //if build failed
                 {
                     //Determine which commit hash caused the build failure

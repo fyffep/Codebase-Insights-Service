@@ -1,13 +1,15 @@
 package com.insightservice.springboot.model;
 
-public class JenkinsBuild
+public class CIBuild
 {
     private long duration;
     private int number;
     private String result; //"SUCCESS" or "FAILURE"
     private String url; //e.g. "https://<JENKINS HOST>/job/<JOB NAME>/<BUILD NUMBER>/"
+    private String commitHash;
+    private String logUrl;
 
-    public JenkinsBuild() {
+    public CIBuild() {
     }
 
     public long getDuration() {
@@ -16,6 +18,22 @@ public class JenkinsBuild
 
     public void setDuration(long duration) {
         this.duration = duration;
+    }
+
+    public String getCommitHash() {
+        return commitHash;
+    }
+
+    public void setCommitHash(String commitHash) {
+        this.commitHash = commitHash;
+    }
+
+    public String getLogUrl() {
+        return logUrl;
+    }
+
+    public void setLogUrl(String logUrl) {
+        this.logUrl = logUrl;
     }
 
     public int getNumber() {
@@ -53,11 +71,10 @@ public class JenkinsBuild
     }
 
 
-    public boolean isSuccessful()
-    {
-        if (this.result.equals("SUCCESS"))
+    public boolean isSuccessful() {
+        if (this.result.equalsIgnoreCase("SUCCESS"))
             return true;
-        else if (this.result.equals("FAILURE"))
+        else if (this.result.equalsIgnoreCase("FAILURE"))
             return false;
         else
             throw new IllegalStateException(result + " is not a valid result for a JenkinsBuild. Expected \"SUCCESS\" or \"FAILURE\"");
