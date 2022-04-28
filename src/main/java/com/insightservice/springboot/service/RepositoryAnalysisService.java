@@ -45,16 +45,16 @@ public class RepositoryAnalysisService
         {
             LOG.info("Beginning new Codebase analysis because the repo is new or updated...");
             codebase = extractDataToCodebase(settingsPayload.getGithubUrl(), settingsPayload.getBranchName(), settingsPayload.getGithubOAuthToken());
+
+            //3rd-party CI tool analysis for build failures
+            this.runCiAnalysis(codebase, settingsPayload);
+
             LOG.info("Finished Codebase analysis.");
         }
         //Else, up-to-date codebase data exists
         else {
             LOG.info("Returning old Codebase data because the repo is up-to-date.");
         }
-
-        //Always run CI since we have no logic to check for updates.
-        //3rd-party CI tool analysis for build failures
-        this.runCiAnalysis(codebase, settingsPayload);
 
         return codebase;
     }
@@ -91,9 +91,6 @@ public class RepositoryAnalysisService
 
             //Now the Codebase contains all the data it needs
             LOG.info("Heat calculations complete. Number of files: " + codebase.getActiveFileObjects().size());
-
-            //Persist the codebase
-            saveCodebase(codebase);
 
             return codebase;
         }
